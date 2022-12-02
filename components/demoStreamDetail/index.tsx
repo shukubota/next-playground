@@ -1,51 +1,60 @@
-import {FC, useCallback} from "react";
-import {SendStream, useChat} from "../../hooks/useConnect";
-
-type Props = {}
+import {useDraw, userList} from "../../hooks/useDraw";
 
 function DemoStreamDetail() {
   const {
     stream: currentStream,
     connectStream,
     disconnectStream,
-    sendData,
-  } = useChat();
-  const onConnect = useCallback(() => {
-    console.log("onConnect")
-    connectStream();
-  }, [currentStream]);
+    cRef,
+    startDrawing,
+    stopDrawing,
+    draw,
+    onChangeUser,
+    onAutoDraw,
+    user,
+  } = useDraw();
 
-  const onDisconnect = useCallback(() => {
-    console.log("onDisconnect")
-    disconnectStream();
-  }, [currentStream])
-
-  const onSend = useCallback(async (data: string) => {
-    const req: SendStream = { message: "hoge" }
-    const res = await sendData(req)
-    console.log(res)
-  }, [])
-
-  console.log("render-------------------")
-  console.log({ currentStream })
   return (
-    <>
-      <div>
-        <p>demo page stream</p>
-      </div>
-      <button onClick={onConnect} style={{ width: 100, padding: 10 }}>
-        <p>接続</p>
+    <div style={{ marginLeft: 10 }}>
+      <h2>
+        クライアント{user}
+      </h2>
+      <button onClick={connectStream} style={{ width: 100, padding: 10 }}>
+        接続
       </button>
-      <button onClick={onDisconnect} style={{ width: 100, padding: 10, marginLeft: 10 }}>
-        <p>接続終了</p>
+      <button onClick={disconnectStream} style={{ width: 100, padding: 10, marginLeft: 10 }}>
+        接続終了
       </button>
-      <p>接続しているか: {String(currentStream !== null)}</p>
-      <div>
-        <button onClick={() => onSend("hoge")} style={{ width: 100, padding: 10, marginLeft: 10 }}>
-          <p>送信</p>
-        </button>
+      <button onClick={onAutoDraw} style={{ width: 100, padding: 10, marginLeft: 10 }}>
+        自動描画
+      </button>
+      <p>grpcサーバと接続しているか: {String(currentStream !== null)}</p>
+      <p style={{ marginTop: 40 }}>UserID(色名=UserID)</p>
+      <select
+        onChange={onChangeUser}
+        defaultValue={userList[0]}
+        style={{ width: 100, height: 40 }}
+      >
+        {userList.map((color: string) => {
+          return (
+            <option key={color} value={color}>
+              {color}
+            </option>
+          );
+        })}
+      </select>
+      <div style={{ marginTop: 20 }}>
+        <canvas
+          style={{ backgroundColor: "white" }}
+          ref={cRef}
+          width="400"
+          height="400"
+          onMouseMove={draw}
+          onMouseDown={startDrawing}
+          onMouseUp={stopDrawing}
+        />
       </div>
-    </>
+    </div>
   );
 }
 
