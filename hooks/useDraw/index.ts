@@ -67,7 +67,7 @@ export const useDraw = () => {
     }
     ctx.beginPath()
     ctx.fillStyle = user
-    ctx.arc(x, y, 200, 0, 2 * Math.PI)
+    ctx.arc(x, y, 10, 0, 2 * Math.PI)
     ctx.fill()
     ctx.closePath()
   }
@@ -109,11 +109,12 @@ export const useDraw = () => {
 
   const onAutoDraw = useCallback(async () => {
     let x = 0;
-    let y = 10;
-    for (let i = 0; i < 1000; i++) {
-      await wait(20)
+    let y = 0;
+    for (let i = 0; i < 2000; i++) {
+      await wait(30)
+
       const rx = Math.floor(Math.random() * 20) - 8
-      const ry = Math.floor(Math.random() * 5)
+      const ry = Math.floor(Math.random() * 10)
       x = Math.max((x + rx) % 400, 0)
       y = Math.max((y + ry) % 400, 0)
       await _sendData(x, y, user)
