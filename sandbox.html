@@ -1,9 +1,28 @@
-<html>
+<!DOCTYPE html>
+<html lang="ja">
 <head></head>
 <body>
   <h1>title</h1>
   <div>
     <p>text</p>
   </div>
+  <select name="customer_country" id="selector">
+    <option value="">選択してください</option>
+    <option value='suzuki'>鈴木</option>
+    <option value='sato'>佐藤</option>
+    <option value='yamada'>山田</option>
+  </select>
+
+  <script type="text/javascript">
+      console.log("==========09999");
+      // const select = document.getElementByNames('[name="customer_country"]');
+      // const select = document.querySelector(`[name='customer_country']`);
+      const select = document.getElementById("selector")
+      console.log("select", select);
+      select.onchange = event => {
+          console.log(select.selectedIndex);
+      }
+      select.addEventListener("select", (e) => console.log(e))
+  </script>
 </body>
 </html>
