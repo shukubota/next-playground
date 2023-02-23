@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-amplify/cli": "^10.7.3",
     "@grpc/grpc-js": "^1.7.3",
     "@types/node": "18.11.9",
     "@types/react": "18.0.25",
