@@ -1,6 +1,7 @@
 import {useCallback, useRef, useState, MouseEvent, ChangeEvent} from "react"
 import {ClientReadableStream} from "grpc-web"
 import {DrawingShareClient} from "../../protobuf/Drawing_shareServiceClientPb"
+import { GreeterClient } from "../../protobuf/HelloServiceClientPb";
 import {
   ConnectRequest,
   SendDrawingRequest,
@@ -9,7 +10,13 @@ import {
   DisConnectRequest
 } from "../../protobuf/drawing_share_pb"
 
+import {
+  HelloRequest,
+} from "../../protobuf/hello_pb"
+
 const client = new DrawingShareClient("http://localhost:9000")
+
+const healthCheckClient = new GreeterClient("http://localhost:9000")
 
 const wait = (ms: number) => new Promise((res) => {
   setTimeout(() => res(true), ms)
@@ -121,6 +128,15 @@ export const useDraw = () => {
     }
   }, [user]);
 
+  const healthCheck = useCallback(async () => {
+    const req = new HelloRequest();
+    req.setName("test");
+
+    return healthCheckClient.sayHello(req, null, (err, res) => {
+      console.log(res)
+    });
+  }, []);
+
   return {
     stream,
     connectStream,
@@ -133,5 +149,6 @@ export const useDraw = () => {
     draw,
     onChangeUser,
     onAutoDraw,
+    healthCheck,
   };
 }
