@@ -1,4 +1,6 @@
 import {useDraw, userList} from "../../hooks/useDraw";
+import {useEffect} from "react";
+import {useHealthCheck} from "../../hooks/healthcheck";
 
 function DemoStreamDetail() {
   const {
@@ -13,6 +15,14 @@ function DemoStreamDetail() {
     onAutoDraw,
     user,
   } = useDraw();
+
+  const {
+    healthCheck,
+  } = useHealthCheck();
+
+  useEffect(() => {
+    healthCheck();
+  }, []);
 
   return (
     <div style={{ marginLeft: 10 }}>
