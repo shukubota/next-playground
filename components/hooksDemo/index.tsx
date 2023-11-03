@@ -31,15 +31,16 @@ const Component1 = (props: Props1) => {
 
   console.log("------------component1");
 
+  console.log(data);
+
   return (
     <div>
       {isLoading && <div>loading...</div>}
       {error && <div>error...</div>}
-      {data && <h2>{data?.length || 4}</h2>}
       <h2>{props.title}</h2>
       {/*<Suspense fallback={<div>loading...</div>}>*/}
         <div>
-          {data && <h2>{data?.length || 4}</h2>}
+          {data && <h2>{data}</h2>}
         </div>
       {/*</Suspense>*/}
 
@@ -70,18 +71,26 @@ const fetcher = () => new Promise((resolve) => {
     resolve({ data: Math.random() });
   }, 700);
 });
+
+interface FetchedData {
+  data: number | undefined;
+  error: any;
+  isLoading: boolean;
+}
 const useDemo = () => {
-  const useFetch = () => {
+  const useFetch = (): FetchedData => {
     console.log('useFetch');
-    const { data, error, isLoading } = useSWR('/fetch', fetcher);
-    console.log({ data, error, isLoading});
+    const { data: _data, error, isLoading } = useSWR('/fetch', fetcher);
+    console.log({ _data, error, isLoading});
+
+    const data = _data as FetchedData
 
     useEffect(() => {
       console.log('useEffect', data?.data);
     }, [data?.data, error, isLoading]);
 
     return {
-      data,
+      data: data?.data,
       error,
       isLoading,
     }
