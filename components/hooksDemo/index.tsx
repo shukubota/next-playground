@@ -1,6 +1,8 @@
 import React, {memo, Suspense, useCallback, useEffect, useState} from 'react';
 import useSWR from "swr";
+import {ClientComponent} from "./clientComponent";
 export const HooksDemo = () => {
+  console.log('--------HooksDemo');
   const [title, setTitle] = useState("HooksDemo");
   const changeTitle = useCallback((title: string) => {
     setTitle(title);
@@ -12,6 +14,7 @@ export const HooksDemo = () => {
       <Component1 title={title} changeTitle={changeTitle}/>
       <Component2 title={title} changeTitle={changeTitle}/>
       <Component2 title={"aaaa"} changeTitle={dummyChangeTitle} />
+      <ClientComponent title="client componentのタイトル" />
     </div>
   )
 }
