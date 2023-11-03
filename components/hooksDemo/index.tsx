@@ -2,8 +2,12 @@ import React, {memo, Suspense, useCallback, useEffect, useState} from 'react';
 import useSWR from "swr";
 import {ClientComponent} from "./clientComponent";
 export const HooksDemo = () => {
-  console.log('--------HooksDemo');
+  console.log('--------HooksDemo server component');
   const [title, setTitle] = useState("HooksDemo");
+
+  useEffect(() => {
+    console.log('hooksDemoのserver componentのuseEffect');
+  }, []);
   const changeTitle = useCallback((title: string) => {
     setTitle(title);
   }, []);
@@ -24,7 +28,7 @@ interface Props1 {
   changeTitle: (v: string) => void;
 }
 const Component1 = (props: Props1) => {
-  console.log('component1');
+  // console.log('component1');
   const _changeTitle = useCallback(() => {
     props.changeTitle((new Date()).toISOString());
   }, [props.changeTitle]);
@@ -32,9 +36,9 @@ const Component1 = (props: Props1) => {
   const { useFetch } = useDemo();
   const { data, error, isLoading } = useFetch();
 
-  console.log("------------component1");
+  // console.log("------------component1");
 
-  console.log(data);
+  // console.log(data);
 
   return (
     <div>
@@ -58,7 +62,7 @@ interface Props2 {
 }
 
 const _Component2 = (props: Props2) => {
-  console.log('component2', props.title);
+  // console.log('component2', props.title);
   return (
     <div>
       <h2>{props.title}</h2>
@@ -69,7 +73,7 @@ const _Component2 = (props: Props2) => {
 const Component2 = memo(_Component2);
 
 const fetcher = () => new Promise((resolve) => {
-  console.log("---------------fetcher--------------fetcher")
+  // console.log("---------------fetcher--------------fetcher")
   setTimeout(() => {
     resolve({ data: Math.random() });
   }, 700);
@@ -82,14 +86,14 @@ interface FetchedData {
 }
 const useDemo = () => {
   const useFetch = (): FetchedData => {
-    console.log('useFetch');
+    // console.log('useFetch');
     const { data: _data, error, isLoading } = useSWR('/fetch', fetcher);
-    console.log({ _data, error, isLoading});
+    // console.log({ _data, error, isLoading});
 
     const data = _data as FetchedData
 
     useEffect(() => {
-      console.log('useEffect', data?.data);
+      // console.log('useEffect', data?.data);
     }, [data?.data, error, isLoading]);
 
     return {

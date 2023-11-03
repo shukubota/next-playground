@@ -2,7 +2,7 @@ import {HooksDemo} from "../../components/hooksDemo";
 import {GetServerSideProps} from "next";
 
 const PerformanceDemo = (props: any) => {
-    console.log({ props })
+  console.log('-------PerformanceDemo');
   return (
     <div>
       <h1>Performance Demo</h1>
@@ -21,7 +21,7 @@ export const getServerSideProps = (async (context) => {
     const repo = await res.json();
 
     console.log('------getServerSideProps');
-    console.log({ repo });
+    // console.log({ repo });
     return { props: { repo } }
 }) satisfies GetServerSideProps<{
     repo: Repo
