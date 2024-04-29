@@ -1,10 +1,21 @@
 import React, {memo, Suspense, useCallback, useEffect, useState} from 'react';
 import useSWR from "swr";
+import {ClientComponent} from "./clientComponent";
+import {Component1} from "./component1";
 export const HooksDemo = () => {
+  console.log('--------HooksDemo server component');
   const [title, setTitle] = useState("HooksDemo");
+
+  // @ts-ignore
+  useEffect(() => {
+    console.log('hooksDemoのserver componentのuseEffect');
+  }, []);
   const changeTitle = useCallback((title: string) => {
     setTitle(title);
   }, []);
+
+  // const a = await fetcher();
+  // console.log({ a });
   const _dummyChangeTitle = (v: string) => { console.log(v) }
   const dummyChangeTitle = useCallback(_dummyChangeTitle, []);
   return (
@@ -12,41 +23,20 @@ export const HooksDemo = () => {
       <Component1 title={title} changeTitle={changeTitle}/>
       <Component2 title={title} changeTitle={changeTitle}/>
       <Component2 title={"aaaa"} changeTitle={dummyChangeTitle} />
+      <ClientComponent title="client componentのタイトル" />
+      <button onClick={() => { console.log("onclick---------------")}}>
+        なんか押せるボタン
+      </button>
     </div>
   )
 }
 
-interface Props1 {
-  title: string;
-  changeTitle: (v: string) => void;
-}
-const Component1 = (props: Props1) => {
-  console.log('component1');
-  const _changeTitle = useCallback(() => {
-    props.changeTitle((new Date()).toISOString());
-  }, [props.changeTitle]);
-
-  const { useFetch } = useDemo();
-  const { data, error, isLoading } = useFetch();
-
-  console.log("------------component1");
-
-  return (
-    <div>
-      {isLoading && <div>loading...</div>}
-      {error && <div>error...</div>}
-      {data && <h2>{data?.length || 4}</h2>}
-      <h2>{props.title}</h2>
-      {/*<Suspense fallback={<div>loading...</div>}>*/}
-        <div>
-          {data && <h2>{data?.length || 4}</h2>}
-        </div>
-      {/*</Suspense>*/}
-
-      <button onClick={_changeTitle}>Change Title</button>
-    </div>
-  )
-}
+const fetcher = () => new Promise((resolve) => {
+  // console.log("---------------fetcher--------------fetcher")
+  setTimeout(() => {
+    resolve({ data: Math.random() });
+  }, 700);
+});
 
 interface Props2 {
   title: string;
@@ -54,7 +44,7 @@ interface Props2 {
 }
 
 const _Component2 = (props: Props2) => {
-  console.log('component2', props.title);
+  // console.log('component2', props.title);
   return (
     <div>
       <h2>{props.title}</h2>
@@ -63,30 +53,3 @@ const _Component2 = (props: Props2) => {
 }
 
 const Component2 = memo(_Component2);
-
-const fetcher = () => new Promise((resolve) => {
-  console.log("---------------fetcher--------------fetcher")
-  setTimeout(() => {
-    resolve({ data: Math.random() });
-  }, 700);
-});
-const useDemo = () => {
-  const useFetch = () => {
-    console.log('useFetch');
-    const { data, error, isLoading } = useSWR('/fetch', fetcher);
-    console.log({ data, error, isLoading});
-
-    useEffect(() => {
-      console.log('useEffect', data?.data);
-    }, [data?.data, error, isLoading]);
-
-    return {
-      data,
-      error,
-      isLoading,
-    }
-  }
-  return {
-    useFetch,
-  }
-}
