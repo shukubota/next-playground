@@ -1,4 +1,5 @@
-// import { credentials, ServiceError } from "@grpc/grpc-js";
+'use client';
+
 import {GreeterClient} from "../../protobuf/HelloServiceClientPb";
 import {HelloRequest} from "../../protobuf/hello_pb";
 import {useEffect} from "react";

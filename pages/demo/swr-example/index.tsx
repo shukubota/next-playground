@@ -1,3 +1,5 @@
+'use client';
+
 import {useSwrExample} from "../../../hooks/useSwrExample";
 
 const SwrExample = () => {

@@ -1,3 +1,5 @@
+'use client';
+
 import React, {memo, Suspense, useCallback, useEffect, useState} from 'react';
 import useSWR from "swr";
 import {ClientComponent} from "./clientComponent";

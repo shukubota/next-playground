@@ -1,3 +1,5 @@
+'use client';
+
 import {useDraw, userList} from "../../hooks/useDraw";
 import {useEffect} from "react";
 import {useHealthCheck} from "../../hooks/healthcheck";
