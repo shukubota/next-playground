@@ -13,6 +13,8 @@ const Page = () => {
     resetGame,
     gameOver,
     winner,
+    moveHistory,
+    canMove,
   } = useOthello();
 
   useEffect(() => {
@@ -21,6 +23,10 @@ const Page = () => {
     }
   }, [gameOver, winner]);
 
+  useEffect(() => {
+    console.log(JSON.stringify(moveHistory));
+  }, [moveHistory]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="grid grid-cols-4 gap-0 w-4/5" style={{ aspectRatio: '1 / 1' }}>
@@ -28,12 +34,15 @@ const Page = () => {
           row.map((cell, cellIndex) => (
             <div
               key={`${rowIndex}-${cellIndex}`}
-              onClick={() => handleClick(rowIndex, cellIndex)}
+              onClick={() => canMove && handleClick(rowIndex, cellIndex)}
               className="relative w-full flex items-center justify-center bg-green-600 border border-black"
             >
               {cell && (
                 <div className={`absolute w-[90%] h-[90%] rounded-full ${cell === 'black' ? 'bg-black' : 'bg-white'}`}></div>
               )}
+              <div className="absolute bottom-0 right-0 text-xs text-white">
+                ({cellIndex + 1},{rowIndex + 1})
+              </div>
             </div>
           ))
         )}

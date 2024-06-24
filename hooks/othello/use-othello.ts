@@ -11,6 +11,11 @@ const initialBoard: Player[][] = [
   [null, null, null, null],
 ];
 
+interface Move {
+  player: Player;
+  position: [number, number];
+}
+
 export const useOthello = () => {
   const [board, setBoard] = useState<Player[][]>(initialBoard);
   const [currentColor, setCurrentColor] = useState<Player>('black');
@@ -18,6 +23,8 @@ export const useOthello = () => {
   const [whiteCount, setWhiteCount] = useState<number>(2);
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [winner, setWinner] = useState<Player | null>(null);
+  const [moveHistory, setMoveHistory] = useState<Move[]>([]);
+  const [canMove, setCanMove] = useState<boolean>(true);
 
   const countDiscs = (board: Player[][]) => {
     let black = 0;
@@ -65,8 +72,17 @@ export const useOthello = () => {
 
     setBoard(newBoard);
     countDiscs(newBoard);
+    setMoveHistory([...moveHistory, { player: currentColor, position: [x + 1, y + 1] }]);
 
-    setCurrentColor(currentColor === 'black' ? 'white' : 'black');
+    if (currentColor === 'black') {
+      setCanMove(false);
+      setTimeout(() => {
+        setCurrentColor('white');
+        setCanMove(true);
+      }, 1000);
+    } else {
+      setCurrentColor('black');
+    }
   };
 
   const resetGame = () => {
@@ -76,6 +92,7 @@ export const useOthello = () => {
     setWhiteCount(2);
     setGameOver(false);
     setWinner(null);
+    setMoveHistory([]);
   };
 
   useEffect(() => {
@@ -113,5 +130,7 @@ export const useOthello = () => {
     resetGame,
     gameOver,
     winner,
+    moveHistory,
+    canMove,
   };
 };
