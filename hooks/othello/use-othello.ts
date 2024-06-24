@@ -26,6 +26,11 @@ export const useOthello = () => {
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [canMove, setCanMove] = useState<boolean>(true);
 
+  const directions = [
+    [-1, 0], [1, 0], [0, -1], [0, 1], // vertical and horizontal
+    [-1, -1], [-1, 1], [1, -1], [1, 1] // diagonal
+  ];
+
   const countDiscs = (board: Player[][]) => {
     let black = 0;
     let white = 0;
@@ -40,13 +45,60 @@ export const useOthello = () => {
   };
 
   const isValidMove = (board: Player[][], x: number, y: number, color: Player): boolean => {
-    // コマの有効性を判定するロジックをここに実装
-    return true;
+    if (board[x][y]) return false;
+
+    const opponentColor = color === 'black' ? 'white' : 'black';
+
+    for (const [dx, dy] of directions) {
+      let nx = x + dx;
+      let ny = y + dy;
+      let hasOpponentDisc = false;
+
+      while (nx >= 0 && ny >= 0 && nx < BOARD_SIZE && ny < BOARD_SIZE) {
+        if (board[nx][ny] === opponentColor) {
+          hasOpponentDisc = true;
+        } else if (board[nx][ny] === color) {
+          if (hasOpponentDisc) return true;
+          break;
+        } else {
+          break;
+        }
+
+        nx += dx;
+        ny += dy;
+      }
+    }
+
+    return false;
   };
 
   const flipDiscs = (board: Player[][], x: number, y: number, color: Player): Player[][] => {
-    // コマをひっくり返すロジックをここに実装
-    return board;
+    const newBoard = board.map(row => row.slice());
+    const opponentColor = color === 'black' ? 'white' : 'black';
+
+    for (const [dx, dy] of directions) {
+      let nx = x + dx;
+      let ny = y + dy;
+      let discsToFlip: [number, number][] = [];
+
+      while (nx >= 0 && ny >= 0 && nx < BOARD_SIZE && ny < BOARD_SIZE) {
+        if (newBoard[nx][ny] === opponentColor) {
+          discsToFlip.push([nx, ny]);
+        } else if (newBoard[nx][ny] === color) {
+          for (const [fx, fy] of discsToFlip) {
+            newBoard[fx][fy] = color;
+          }
+          break;
+        } else {
+          break;
+        }
+
+        nx += dx;
+        ny += dy;
+      }
+    }
+
+    return newBoard;
   };
 
   const getValidMoves = (board: Player[][], color: Player): [number, number][] => {
