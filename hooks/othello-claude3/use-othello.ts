@@ -5,7 +5,8 @@ type Cell = Player | null
 type Board = Cell[][]
 
 const BOARD_SIZE = 4
-const INITIAL_BOARD: Board = [
+
+const createInitialBoard = (): Board => [
   [null, null, null, null],
   [null, 'white', 'black', null],
   [null, 'black', 'white', null],
@@ -13,7 +14,7 @@ const INITIAL_BOARD: Board = [
 ]
 
 export const useOthello = () => {
-  const [board, setBoard] = useState<Board>(INITIAL_BOARD)
+  const [board, setBoard] = useState<Board>(createInitialBoard)
   const [currentPlayer, setCurrentPlayer] = useState<Player>('black')
   const [gameOver, setGameOver] = useState(false)
 
@@ -145,10 +146,18 @@ export const useOthello = () => {
   }, [board])
 
   const resetGame = useCallback(() => {
-    setBoard(INITIAL_BOARD)
+    console.log('Resetting game...')
+    console.log('Current board before reset:', JSON.stringify(board))
+    const newBoard = createInitialBoard()
+    setBoard(newBoard)
     setCurrentPlayer('black')
     setGameOver(false)
+    console.log('New board after reset:', JSON.stringify(newBoard))
   }, [])
+
+  useEffect(() => {
+    console.log('Current board state:', JSON.stringify(board))
+  }, [board])
 
   return {
     board,
