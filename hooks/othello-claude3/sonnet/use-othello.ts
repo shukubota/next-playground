@@ -1,165 +1,172 @@
-'use client'
+import { useState, useEffect, useCallback } from 'react';
 
-import { useState, useCallback, useEffect } from 'react'
+type Player = 'black' | 'white';
+type Position = [number, number];
+type Cell = { player: Player; position: Position } | null;
+type Board = Cell[][];
 
-type Player = 'black' | 'white'
-type Position = [number, number]
-type Cell = { player: Player; position: Position }
-type Board = Cell[]
-
-const BOARD_SIZE = 4
-const getInitialBoard = (): Board => [
-  { player: 'black', position: [2, 2] },
-  { player: 'white', position: [2, 3] },
-  { player: 'black', position: [3, 3] },
-  { player: 'white', position: [3, 2] },
-]
-
+const BOARD_SIZE = 4;
 const DIRECTIONS = [
   [-1, -1], [-1, 0], [-1, 1],
   [0, -1],           [0, 1],
   [1, -1],  [1, 0],  [1, 1]
-]
+];
+
+const INITIAL_BOARD: Board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
+INITIAL_BOARD[1][1] = { player: 'black', position: [1, 1] };
+INITIAL_BOARD[1][2] = { player: 'white', position: [1, 2] };
+INITIAL_BOARD[2][2] = { player: 'black', position: [2, 2] };
+INITIAL_BOARD[2][1] = { player: 'white', position: [2, 1] };
+
+const countPieces = (board: Board): { black: number; white: number } => {
+  return board.flat().reduce(
+    (acc, cell) => {
+      if (cell?.player === 'black') acc.black++;
+      if (cell?.player === 'white') acc.white++;
+      return acc;
+    },
+    { black: 0, white: 0 }
+  );
+};
+
+const isValidMove = (board: Board, player: Player, [x, y]: Position): boolean => {
+  if (board[y][x] !== null) return false;
+
+  return DIRECTIONS.some(([dx, dy]) => {
+    let nx = x + dx;
+    let ny = y + dy;
+    let foundOpponent = false;
+
+    while (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
+      const cell = board[ny][nx];
+      if (cell === null) return false;
+      if (cell.player === player) return foundOpponent;
+      foundOpponent = true;
+      nx += dx;
+      ny += dy;
+    }
+
+    return false;
+  });
+};
+
+const getValidMoves = (board: Board, player: Player): Position[] => {
+  const validMoves: Position[] = [];
+  for (let y = 0; y < BOARD_SIZE; y++) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
+      if (isValidMove(board, player, [x, y])) {
+        validMoves.push([x, y]);
+      }
+    }
+  }
+  return validMoves;
+};
+
+const flipPieces = (board: Board, player: Player, [x, y]: Position): Board => {
+  const newBoard = board.map(row => [...row]);
+  newBoard[y][x] = { player, position: [x, y] };
+
+  DIRECTIONS.forEach(([dx, dy]) => {
+    let nx = x + dx;
+    let ny = y + dy;
+    const piecesToFlip: Position[] = [];
+
+    while (nx >= 0 && nx < BOARD_SIZE && ny >= 0 && ny < BOARD_SIZE) {
+      const cell = newBoard[ny][nx];
+      if (cell === null) break;
+      if (cell.player === player) {
+        piecesToFlip.forEach(([fx, fy]) => {
+          newBoard[fy][fx] = { player, position: [fx, fy] };
+        });
+        break;
+      }
+      piecesToFlip.push([nx, ny]);
+      nx += dx;
+      ny += dy;
+    }
+  });
+
+  return newBoard;
+};
+
+const getBestMove = (board: Board, player: Player): Position | null => {
+  const validMoves = getValidMoves(board, player);
+  if (validMoves.length === 0) return null;
+
+  // Simple AI: choose the move that flips the most pieces
+  return validMoves.reduce((bestMove, move) => {
+    const newBoard = flipPieces(board, player, move);
+    const score = countPieces(newBoard)[player];
+    return score > bestMove.score ? { move, score } : bestMove;
+  }, { move: validMoves[0], score: -1 }).move;
+};
 
 export const useOthello = () => {
-  const [board, setBoard] = useState<Board>(getInitialBoard)
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('black')
-  const [gameOver, setGameOver] = useState(false)
-  const [winner, setWinner] = useState<Player | null>(null)
-
-  const isValidMove = useCallback((player: Player, position: Position): boolean => {
-    if (board.some(cell => cell.position[0] === position[0] && cell.position[1] === position[1])) {
-      return false
-    }
-
-    for (const dir of DIRECTIONS) {
-      let x = position[0] + dir[0]
-      let y = position[1] + dir[1]
-      let foundOpponent = false
-
-      while (x >= 1 && x <= BOARD_SIZE && y >= 1 && y <= BOARD_SIZE) {
-        const cell = board.find(c => c.position[0] === x && c.position[1] === y)
-        if (!cell) break
-        if (cell.player === player) {
-          if (foundOpponent) return true
-          break
-        }
-        foundOpponent = true
-        x += dir[0]
-        y += dir[1]
-      }
-    }
-
-    return false
-  }, [board])
-
-  const getValidMoves = useCallback((player: Player): Position[] => {
-    const validMoves: Position[] = []
-    for (let x = 1; x <= BOARD_SIZE; x++) {
-      for (let y = 1; y <= BOARD_SIZE; y++) {
-        if (isValidMove(player, [x, y])) {
-          validMoves.push([x, y])
-        }
-      }
-    }
-    return validMoves
-  }, [isValidMove])
-
-  const flipCells = useCallback((player: Player, position: Position): Board => {
-    const newBoard = [...board]
-
-    for (const dir of DIRECTIONS) {
-      let x = position[0] + dir[0]
-      let y = position[1] + dir[1]
-      const cellsToFlip: Position[] = []
-
-      while (x >= 1 && x <= BOARD_SIZE && y >= 1 && y <= BOARD_SIZE) {
-        const cellIndex = newBoard.findIndex(c => c.position[0] === x && c.position[1] === y)
-        if (cellIndex === -1) break
-        if (newBoard[cellIndex].player === player) {
-          cellsToFlip.forEach(pos => {
-            const idx = newBoard.findIndex(c => c.position[0] === pos[0] && c.position[1] === pos[1])
-            if (idx !== -1) newBoard[idx].player = player
-          })
-          break
-        }
-        cellsToFlip.push([x, y])
-        x += dir[0]
-        y += dir[1]
-      }
-    }
-
-    newBoard.push({ player, position })
-    return newBoard
-  }, [board])
-
-  const makeMove = useCallback((position: Position) => {
-    if (gameOver || !isValidMove(currentPlayer, position)) return
-
-    const newBoard = flipCells(currentPlayer, position)
-    setBoard(newBoard)
-    console.log(JSON.stringify(newBoard))
-
-    const nextPlayer = currentPlayer === 'black' ? 'white' : 'black'
-    setCurrentPlayer(nextPlayer)
-
-    if (getValidMoves(nextPlayer).length === 0) {
-      if (getValidMoves(currentPlayer).length === 0) {
-        endGame()
-      } else {
-        alert(`${nextPlayer === 'black' ? '黒' : '白'}はパスします`)
-        setCurrentPlayer(currentPlayer)
-      }
-    }
-  }, [currentPlayer, gameOver, isValidMove, flipCells, getValidMoves])
-
-  const getCellCounts = useCallback(() => {
-    const counts = { black: 0, white: 0 }
-    board.forEach(cell => {
-      counts[cell.player]++
-    })
-    return counts
-  }, [board])
-
-  const endGame = useCallback(() => {
-    setGameOver(true)
-    const counts = getCellCounts()
-    if (counts.black > counts.white) setWinner('black')
-    else if (counts.white > counts.black) setWinner('white')
-    else setWinner(null)
-  }, [getCellCounts])
+  const [board, setBoard] = useState<Board>(INITIAL_BOARD);
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('black');
+  const [gameOver, setGameOver] = useState(false);
+  const [winner, setWinner] = useState<Player | 'draw' | null>(null);
 
   const resetGame = useCallback(() => {
-    setBoard(getInitialBoard())
-    setCurrentPlayer('black')
-    setGameOver(false)
-    setWinner(null)
-  }, [])
+    setBoard(INITIAL_BOARD);
+    setCurrentPlayer('black');
+    setGameOver(false);
+    setWinner(null);
+  }, []);
+
+  const makeMove = useCallback((position: Position) => {
+    if (gameOver || currentPlayer !== 'black') return;
+
+    if (isValidMove(board, currentPlayer, position)) {
+      const newBoard = flipPieces(board, currentPlayer, position);
+      setBoard(newBoard);
+      setCurrentPlayer('white');
+    }
+  }, [board, currentPlayer, gameOver]);
+
+  const cpuMove = useCallback(() => {
+    const bestMove = getBestMove(board, 'white');
+    if (bestMove) {
+      setTimeout(() => {
+        const newBoard = flipPieces(board, 'white', bestMove);
+        setBoard(newBoard);
+        setCurrentPlayer('black');
+      }, 500);
+    } else {
+      alert('CPUがパスします');
+      setCurrentPlayer('black');
+    }
+  }, [board]);
 
   useEffect(() => {
     if (currentPlayer === 'white' && !gameOver) {
-      setTimeout(() => {
-        const validMoves = getValidMoves('white')
-        if (validMoves.length > 0) {
-          const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)]
-          makeMove(randomMove)
-        } else {
-          alert('白はパスします')
-          setCurrentPlayer('black')
-        }
-      }, 500)
+      cpuMove();
     }
-  }, [currentPlayer, gameOver, getValidMoves, makeMove])
+  }, [currentPlayer, gameOver, cpuMove]);
+
+  useEffect(() => {
+    const blackMoves = getValidMoves(board, 'black');
+    const whiteMoves = getValidMoves(board, 'white');
+
+    if (blackMoves.length === 0 && whiteMoves.length === 0) {
+      setGameOver(true);
+      const { black, white } = countPieces(board);
+      if (black > white) setWinner('black');
+      else if (white > black) setWinner('white');
+      else setWinner('draw');
+    } else if (currentPlayer === 'black' && blackMoves.length === 0) {
+      alert('黒がパスします');
+      setCurrentPlayer('white');
+    }
+  }, [board, currentPlayer]);
 
   return {
     board,
     currentPlayer,
+    makeMove,
+    resetGame,
     gameOver,
     winner,
-    makeMove,
-    getCellCounts,
-    resetGame,
-    setBoard,
-    setCurrentPlayer,
-  }
-}
+    pieces: countPieces(board),
+  };
+};
