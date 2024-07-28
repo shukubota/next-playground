@@ -8,7 +8,7 @@ type Cell = { player: Player; position: Position }
 type Board = Cell[]
 
 const BOARD_SIZE = 4
-const INITIAL_BOARD: Board = [
+const getInitialBoard = (): Board => [
   { player: 'black', position: [2, 2] },
   { player: 'white', position: [2, 3] },
   { player: 'black', position: [3, 3] },
@@ -22,7 +22,7 @@ const DIRECTIONS = [
 ]
 
 export const useOthello = () => {
-  const [board, setBoard] = useState<Board>(INITIAL_BOARD)
+  const [board, setBoard] = useState<Board>(getInitialBoard)
   const [currentPlayer, setCurrentPlayer] = useState<Player>('black')
   const [gameOver, setGameOver] = useState(false)
   const [winner, setWinner] = useState<Player | null>(null)
@@ -130,7 +130,7 @@ export const useOthello = () => {
   }, [getCellCounts])
 
   const resetGame = useCallback(() => {
-    setBoard(INITIAL_BOARD)
+    setBoard(getInitialBoard())
     setCurrentPlayer('black')
     setGameOver(false)
     setWinner(null)
@@ -159,5 +159,7 @@ export const useOthello = () => {
     makeMove,
     getCellCounts,
     resetGame,
+    setBoard,
+    setCurrentPlayer,
   }
 }
