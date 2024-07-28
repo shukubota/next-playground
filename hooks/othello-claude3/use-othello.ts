@@ -11,8 +11,8 @@ const BOARD_SIZE = 4
 const INITIAL_BOARD: Board = [
   { player: 'black', position: [2, 2] },
   { player: 'white', position: [2, 3] },
-  { player: 'black', position: [3, 2] },
-  { player: 'white', position: [3, 3] },
+  { player: 'black', position: [3, 3] },
+  { player: 'white', position: [3, 2] },
 ]
 
 const DIRECTIONS = [
