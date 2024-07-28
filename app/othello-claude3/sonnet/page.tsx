@@ -1,6 +1,6 @@
 'use client'
 
-import { useOthello } from '../../hooks/othello-claude3/use-othello'
+import { useOthello } from '../../../hooks/othello-claude3/sonnet/use-othello'
 
 const Page = () => {
   const { board, currentPlayer, gameOver, winner, makeMove, getCellCounts, resetGame } = useOthello()
