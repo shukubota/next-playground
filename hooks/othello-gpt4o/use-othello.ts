@@ -15,9 +15,9 @@ const initialState: GameState = [
 
 const initialMoves: Move[] = [
   { player: 'black', position: [2, 2] },
-  { player: 'white', position: [2, 3] },
-  { player: 'black', position: [3, 3] },
   { player: 'white', position: [3, 2] },
+  { player: 'black', position: [3, 3] },
+  { player: 'white', position: [2, 3] },
 ];
 
 const directions: Position[] = [
@@ -32,15 +32,15 @@ export const useOthello = () => {
   const [moves, setMoves] = useState<Move[]>(initialMoves);
 
   const isValidMove = useCallback((state: GameState, player: Player, [x, y]: Position): boolean => {
-    if (state[y][x] !== null) return false;
+    if (state[y-1][x-1] !== null) return false;
 
     for (const [dx, dy] of directions) {
       let nx = x + dx, ny = y + dy;
       let foundOpponent = false;
 
-      while (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
-        if (state[ny][nx] === null) break;
-        if (state[ny][nx] === player) {
+      while (nx >= 1 && nx <= 4 && ny >= 1 && ny <= 4) {
+        if (state[ny-1][nx-1] === null) break;
+        if (state[ny-1][nx-1] === player) {
           if (foundOpponent) return true;
           break;
         }
@@ -55,8 +55,8 @@ export const useOthello = () => {
 
   const getValidMoves = useCallback((state: GameState, player: Player): Position[] => {
     const validMoves: Position[] = [];
-    for (let y = 0; y < 4; y++) {
-      for (let x = 0; x < 4; x++) {
+    for (let y = 1; y <= 4; y++) {
+      for (let x = 1; x <= 4; x++) {
         if (isValidMove(state, player, [x, y])) {
           validMoves.push([x, y]);
         }
@@ -69,17 +69,17 @@ export const useOthello = () => {
     if (!isValidMove(state, player, [x, y])) return state;
 
     const newState = state.map(row => [...row]);
-    newState[y][x] = player;
+    newState[y-1][x-1] = player;
 
     for (const [dx, dy] of directions) {
       let nx = x + dx, ny = y + dy;
       const toFlip: Position[] = [];
 
-      while (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
-        if (newState[ny][nx] === null) break;
-        if (newState[ny][nx] === player) {
+      while (nx >= 1 && nx <= 4 && ny >= 1 && ny <= 4) {
+        if (newState[ny-1][nx-1] === null) break;
+        if (newState[ny-1][nx-1] === player) {
           for (const [fx, fy] of toFlip) {
-            newState[fy][fx] = player;
+            newState[fy-1][fx-1] = player;
           }
           break;
         }

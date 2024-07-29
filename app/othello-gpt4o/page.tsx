@@ -1,5 +1,4 @@
 'use client'
-
 import React from 'react';
 import { useOthello } from '../../hooks/othello-gpt4o/use-othello';
 
@@ -15,9 +14,9 @@ const Page = () => {
           {gameState.map((row, y) =>
             row.map((cell, x) => (
               <div
-                key={`${x}-${y}`}
+                key={`${x+1}-${y+1}`}
                 className="aspect-square border border-black flex items-center justify-center cursor-pointer"
-                onClick={() => handlePlayerMove(x, y)}
+                onClick={() => handlePlayerMove(x+1, y+1)}
               >
                 {cell && (
                   <div
