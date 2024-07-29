@@ -78,9 +78,9 @@ export const useOthello = () => {
       while (nx >= 1 && nx <= 4 && ny >= 1 && ny <= 4) {
         if (newState[ny-1][nx-1] === null) break;
         if (newState[ny-1][nx-1] === player) {
-          for (const [fx, fy] of toFlip) {
+          toFlip.forEach(([fx, fy]) => {
             newState[fy-1][fx-1] = player;
-          }
+          });
           break;
         }
         toFlip.push([nx, ny]);
@@ -92,31 +92,38 @@ export const useOthello = () => {
     return newState;
   }, [isValidMove]);
 
-  const computerMove = useCallback(() => {
-    const validMoves = getValidMoves(gameState, 'white');
+  const computerMove = useCallback((currentState: GameState) => {
+    const validMoves = getValidMoves(currentState, 'white');
     if (validMoves.length === 0) {
       alert('CPUがパスします');
       setCurrentPlayer('black');
-      return;
+      return currentState;
     }
 
     const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-    const newState = makeMove(gameState, 'white', randomMove);
-    setGameState(newState);
+    const newState = makeMove(currentState, 'white', randomMove);
     setMoves(prev => [...prev, { player: 'white', position: randomMove }]);
     setCurrentPlayer('black');
-  }, [gameState, getValidMoves, makeMove]);
+    return newState;
+  }, [getValidMoves, makeMove]);
 
   const handlePlayerMove = useCallback((x: number, y: number) => {
-    if (currentPlayer !== 'black' || !isValidMove(gameState, 'black', [x, y])) return;
+    if (currentPlayer !== 'black') return;
 
-    const newState = makeMove(gameState, 'black', [x, y]);
-    setGameState(newState);
-    setMoves(prev => [...prev, { player: 'black', position: [x, y] }]);
-    setCurrentPlayer('white');
+    setGameState(prevState => {
+      if (!isValidMove(prevState, 'black', [x, y])) return prevState;
 
-    setTimeout(computerMove, 500);
-  }, [currentPlayer, gameState, isValidMove, makeMove, computerMove]);
+      const newState = makeMove(prevState, 'black', [x, y]);
+      setMoves(prev => [...prev, { player: 'black', position: [x, y] }]);
+      setCurrentPlayer('white');
+
+      setTimeout(() => {
+        setGameState(computerMove(newState));
+      }, 500);
+
+      return newState;
+    });
+  }, [currentPlayer, isValidMove, makeMove, computerMove]);
 
   const resetGame = useCallback(() => {
     setGameState(initialState);
@@ -152,8 +159,9 @@ export const useOthello = () => {
 
   useEffect(() => {
     console.log(JSON.stringify(moves));
+    console.log(JSON.stringify(gameState));
     checkGameEnd();
-  }, [moves, checkGameEnd]);
+  }, [moves, gameState, checkGameEnd]);
 
   return {
     gameState,
