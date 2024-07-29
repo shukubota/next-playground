@@ -1,159 +1,165 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
-type Player = 'B' | 'W' | null;
+type Player = 'black' | 'white';
+type Cell = Player | null;
+type Position = [number, number];
+type GameState = Cell[][];
+type Move = { player: Player; position: Position };
 
-const initialBoard: Player[][] = [
+const initialState: GameState = [
   [null, null, null, null],
-  [null, 'W', 'B', null],
-  [null, 'B', 'W', null],
+  [null, 'black', 'white', null],
+  [null, 'white', 'black', null],
   [null, null, null, null],
 ];
 
-const directions = [
-  [-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]
+const initialMoves: Move[] = [
+  { player: 'black', position: [2, 2] },
+  { player: 'white', position: [2, 3] },
+  { player: 'black', position: [3, 3] },
+  { player: 'white', position: [3, 2] },
+];
+
+const directions: Position[] = [
+  [-1, -1], [-1, 0], [-1, 1],
+  [0, -1],           [0, 1],
+  [1, -1],  [1, 0],  [1, 1]
 ];
 
 export const useOthello = () => {
-  const [board, setBoard] = useState<Player[][]>(initialBoard);
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('B');
-  const [blackCount, setBlackCount] = useState(2);
-  const [whiteCount, setWhiteCount] = useState(2);
-  const [message, setMessage] = useState<string | null>(null);
+  const [gameState, setGameState] = useState<GameState>(initialState);
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('black');
+  const [moves, setMoves] = useState<Move[]>(initialMoves);
 
-  const resetGame = () => {
-    setBoard(initialBoard);
-    setCurrentPlayer('B');
-    setBlackCount(2);
-    setWhiteCount(2);
-    setMessage(null);
-  };
+  const isValidMove = useCallback((state: GameState, player: Player, [x, y]: Position): boolean => {
+    if (state[y][x] !== null) return false;
 
-  const countPieces = (board: Player[][]) => {
-    let black = 0;
-    let white = 0;
-    board.forEach(row => row.forEach(cell => {
-      if (cell === 'B') black++;
-      if (cell === 'W') white++;
-    }));
-    setBlackCount(black);
-    setWhiteCount(white);
-  };
-
-  const isValidMove = (board: Player[][], row: number, col: number, player: Player) => {
-    if (board[row][col] !== null) return false;
-
-    const opponent = player === 'B' ? 'W' : 'B';
     for (const [dx, dy] of directions) {
-      let x = row + dx;
-      let y = col + dy;
-      let hasOpponent = false;
+      let nx = x + dx, ny = y + dy;
+      let foundOpponent = false;
 
-      while (x >= 0 && x < 4 && y >= 0 && y < 4 && board[x][y] === opponent) {
-        x += dx;
-        y += dy;
-        hasOpponent = true;
-      }
-
-      if (hasOpponent && x >= 0 && x < 4 && y >= 0 && y < 4 && board[x][y] === player) {
-        return true;
+      while (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
+        if (state[ny][nx] === null) break;
+        if (state[ny][nx] === player) {
+          if (foundOpponent) return true;
+          break;
+        }
+        foundOpponent = true;
+        nx += dx;
+        ny += dy;
       }
     }
-    return false;
-  };
 
-  const getValidMoves = (board: Player[][], player: Player) => {
-    const validMoves: [number, number][] = [];
-    for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < 4; col++) {
-        if (isValidMove(board, row, col, player)) {
-          validMoves.push([row, col]);
+    return false;
+  }, []);
+
+  const getValidMoves = useCallback((state: GameState, player: Player): Position[] => {
+    const validMoves: Position[] = [];
+    for (let y = 0; y < 4; y++) {
+      for (let x = 0; x < 4; x++) {
+        if (isValidMove(state, player, [x, y])) {
+          validMoves.push([x, y]);
         }
       }
     }
     return validMoves;
-  };
+  }, [isValidMove]);
 
-  const flipPieces = (board: Player[][], row: number, col: number, player: Player) => {
-    const newBoard = board.map(r => r.slice());
-    const opponent = player === 'B' ? 'W' : 'B';
+  const makeMove = useCallback((state: GameState, player: Player, [x, y]: Position): GameState => {
+    if (!isValidMove(state, player, [x, y])) return state;
+
+    const newState = state.map(row => [...row]);
+    newState[y][x] = player;
 
     for (const [dx, dy] of directions) {
-      let x = row + dx;
-      let y = col + dy;
-      const cellsToFlip: [number, number][] = [];
+      let nx = x + dx, ny = y + dy;
+      const toFlip: Position[] = [];
 
-      while (x >= 0 && x < 4 && y >= 0 && y < 4 && board[x][y] === opponent) {
-        cellsToFlip.push([x, y]);
-        x += dx;
-        y += dy;
-      }
-
-      if (x >= 0 && x < 4 && y >= 0 && y < 4 && board[x][y] === player) {
-        cellsToFlip.forEach(([fx, fy]) => {
-          newBoard[fx][fy] = player;
-        });
+      while (nx >= 0 && nx < 4 && ny >= 0 && ny < 4) {
+        if (newState[ny][nx] === null) break;
+        if (newState[ny][nx] === player) {
+          for (const [fx, fy] of toFlip) {
+            newState[fy][fx] = player;
+          }
+          break;
+        }
+        toFlip.push([nx, ny]);
+        nx += dx;
+        ny += dy;
       }
     }
 
-    newBoard[row][col] = player;
-    return newBoard;
-  };
+    return newState;
+  }, [isValidMove]);
 
-  const makeMove = (row: number, col: number, player: Player) => {
-    if (!isValidMove(board, row, col, player)) return false;
-
-    const newBoard = flipPieces(board, row, col, player);
-    setBoard(newBoard);
-    countPieces(newBoard);
-
-    return true;
-  };
-
-  const handleClick = (row: number, col: number) => {
-    if (currentPlayer !== 'B') return;
-
-    const validMoves = getValidMoves(board, currentPlayer);
+  const computerMove = useCallback(() => {
+    const validMoves = getValidMoves(gameState, 'white');
     if (validMoves.length === 0) {
-      setMessage('パスします');
-      setCurrentPlayer('W');
+      alert('CPUがパスします');
+      setCurrentPlayer('black');
       return;
     }
 
-    if (!makeMove(row, col, 'B')) return;
+    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+    const newState = makeMove(gameState, 'white', randomMove);
+    setGameState(newState);
+    setMoves(prev => [...prev, { player: 'white', position: randomMove }]);
+    setCurrentPlayer('black');
+  }, [gameState, getValidMoves, makeMove]);
 
-    setCurrentPlayer('W');
+  const handlePlayerMove = useCallback((x: number, y: number) => {
+    if (currentPlayer !== 'black' || !isValidMove(gameState, 'black', [x, y])) return;
 
-    setTimeout(() => {
-      const cpuValidMoves = getValidMoves(board, 'W');
-      if (cpuValidMoves.length === 0) {
-        setMessage('パスします');
-        setCurrentPlayer('B');
-        return;
+    const newState = makeMove(gameState, 'black', [x, y]);
+    setGameState(newState);
+    setMoves(prev => [...prev, { player: 'black', position: [x, y] }]);
+    setCurrentPlayer('white');
+
+    setTimeout(computerMove, 500);
+  }, [currentPlayer, gameState, isValidMove, makeMove, computerMove]);
+
+  const resetGame = useCallback(() => {
+    setGameState(initialState);
+    setCurrentPlayer('black');
+    setMoves(initialMoves);
+  }, []);
+
+  const getCounts = useCallback((state: GameState) => {
+    let blackCount = 0, whiteCount = 0;
+    for (const row of state) {
+      for (const cell of row) {
+        if (cell === 'black') blackCount++;
+        else if (cell === 'white') whiteCount++;
       }
+    }
+    return { blackCount, whiteCount };
+  }, []);
 
-      const [cpuRow, cpuCol] = cpuValidMoves[Math.floor(Math.random() * cpuValidMoves.length)];
-      makeMove(cpuRow, cpuCol, 'W');
-      setCurrentPlayer('B');
-    }, 500);
-  };
+  const checkGameEnd = useCallback(() => {
+    const blackMoves = getValidMoves(gameState, 'black');
+    const whiteMoves = getValidMoves(gameState, 'white');
+    if (blackMoves.length === 0 && whiteMoves.length === 0) {
+      const { blackCount, whiteCount } = getCounts(gameState);
+      if (blackCount > whiteCount) {
+        alert('黒の勝ち');
+      } else if (whiteCount > blackCount) {
+        alert('白の勝ち');
+      } else {
+        alert('引き分け');
+      }
+    }
+  }, [gameState, getValidMoves, getCounts]);
 
   useEffect(() => {
-    const blackValidMoves = getValidMoves(board, 'B');
-    const whiteValidMoves = getValidMoves(board, 'W');
-
-    if (blackValidMoves.length === 0 && whiteValidMoves.length === 0) {
-      const winner = blackCount > whiteCount ? '黒の勝' : '白の勝';
-      setMessage(winner);
-    }
-  }, [board]);
+    console.log(JSON.stringify(moves));
+    checkGameEnd();
+  }, [moves, checkGameEnd]);
 
   return {
-    board,
+    gameState,
     currentPlayer,
-    handleClick,
+    handlePlayerMove,
     resetGame,
-    blackCount,
-    whiteCount,
-    message,
+    getCounts,
   };
 };
