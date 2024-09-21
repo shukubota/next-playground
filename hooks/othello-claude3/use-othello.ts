@@ -1,99 +1,170 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react'
 
-type Player = 'black' | 'white';
-type Cell = Player | null;
-type Board = Cell[][];
+type Player = 'black' | 'white'
+type Cell = Player | null
+type Board = Cell[][]
 
-const BOARD_SIZE = 8;
-const DIRECTIONS = [
-  [-1, -1], [-1, 0], [-1, 1],
-  [0, -1],           [0, 1],
-  [1, -1],  [1, 0],  [1, 1]
-];
+const BOARD_SIZE = 4
 
-const createInitialBoard = (): Board => {
-  const board: Board = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(null));
-  const mid = BOARD_SIZE / 2 - 1;
-  board[mid][mid] = 'white';
-  board[mid][mid + 1] = 'black';
-  board[mid + 1][mid] = 'black';
-  board[mid + 1][mid + 1] = 'white';
-  return board;
-};
-
-const getOpponent = (player: Player): Player => player === 'black' ? 'white' : 'black';
+const createInitialBoard = (): Board => [
+  [null, null, null, null],
+  [null, 'white', 'black', null],
+  [null, 'black', 'white', null],
+  [null, null, null, null],
+]
 
 export const useOthello = () => {
-  const [board, setBoard] = useState<Board>(createInitialBoard());
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('black');
+  const [board, setBoard] = useState<Board>(createInitialBoard)
+  const [currentPlayer, setCurrentPlayer] = useState<Player>('black')
+  const [gameOver, setGameOver] = useState(false)
 
   const isValidMove = useCallback((row: number, col: number, player: Player): boolean => {
-    if (board[row][col] !== null) return false;
+    if (board[row][col] !== null) return false
 
-    for (const [dx, dy] of DIRECTIONS) {
-      let x = row + dx;
-      let y = col + dy;
-      let hasOpponent = false;
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],           [0, 1],
+      [1, -1],  [1, 0],  [1, 1]
+    ]
+
+    for (const [dx, dy] of directions) {
+      let x = row + dx
+      let y = col + dy
+      let foundOpponent = false
 
       while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
-        if (board[x][y] === null) break;
+        if (board[x][y] === null) break
         if (board[x][y] === player) {
-          if (hasOpponent) return true;
-          break;
+          if (foundOpponent) return true
+          break
         }
-        hasOpponent = true;
-        x += dx;
-        y += dy;
+        foundOpponent = true
+        x += dx
+        y += dy
       }
     }
 
-    return false;
-  }, [board]);
+    return false
+  }, [board])
+
+  const flipPieces = useCallback((row: number, col: number, player: Player): void => {
+    const newBoard = [...board]
+    const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],           [0, 1],
+      [1, -1],  [1, 0],  [1, 1]
+    ]
+
+    for (const [dx, dy] of directions) {
+      let x = row + dx
+      let y = col + dy
+      const piecesToFlip: [number, number][] = []
+
+      while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
+        if (newBoard[x][y] === null) break
+        if (newBoard[x][y] === player) {
+          for (const [fx, fy] of piecesToFlip) {
+            newBoard[fx][fy] = player
+          }
+          break
+        }
+        piecesToFlip.push([x, y])
+        x += dx
+        y += dy
+      }
+    }
+
+    newBoard[row][col] = player
+    setBoard(newBoard)
+  }, [board])
 
   const makeMove = useCallback((row: number, col: number) => {
-    if (!isValidMove(row, col, currentPlayer)) return;
+    if (gameOver || !isValidMove(row, col, currentPlayer)) return
 
-    const newBoard = board.map(row => [...row]);
-    newBoard[row][col] = currentPlayer;
+    flipPieces(row, col, currentPlayer)
 
-    for (const [dx, dy] of DIRECTIONS) {
-      let x = row + dx;
-      let y = col + dy;
-      const toFlip: [number, number][] = [];
+    const nextPlayer = currentPlayer === 'black' ? 'white' : 'black'
+    setCurrentPlayer(nextPlayer)
 
-      while (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
-        if (newBoard[x][y] === null) break;
-        if (newBoard[x][y] === currentPlayer) {
-          for (const [flipX, flipY] of toFlip) {
-            newBoard[flipX][flipY] = currentPlayer;
-          }
-          break;
-        }
-        toFlip.push([x, y]);
-        x += dx;
-        y += dy;
+    if (!hasValidMoves(nextPlayer)) {
+      if (!hasValidMoves(currentPlayer)) {
+        setGameOver(true)
+      } else {
+        alert(`${nextPlayer === 'black' ? '黒' : '白'}はパスします`)
+        setCurrentPlayer(currentPlayer)
       }
     }
+  }, [currentPlayer, gameOver, isValidMove, flipPieces])
 
-    setBoard(newBoard);
-    setCurrentPlayer(getOpponent(currentPlayer));
-  }, [board, currentPlayer, isValidMove]);
+  const hasValidMoves = useCallback((player: Player): boolean => {
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (isValidMove(row, col, player)) {
+          return true
+        }
+      }
+    }
+    return false
+  }, [isValidMove])
 
   const cpuMove = useCallback(() => {
-    const validMoves: [number, number][] = [];
-    for (let i = 0; i < BOARD_SIZE; i++) {
-      for (let j = 0; j < BOARD_SIZE; j++) {
-        if (isValidMove(i, j, currentPlayer)) {
-          validMoves.push([i, j]);
+    const validMoves: [number, number][] = []
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (isValidMove(row, col, 'white')) {
+          validMoves.push([row, col])
         }
       }
     }
 
     if (validMoves.length > 0) {
-      const [row, col] = validMoves[Math.floor(Math.random() * validMoves.length)];
-      makeMove(row, col);
+      const [row, col] = validMoves[Math.floor(Math.random() * validMoves.length)]
+      makeMove(row, col)
+    } else {
+      alert('白はパスします')
+      setCurrentPlayer('black')
     }
-  }, [currentPlayer, isValidMove, makeMove]);
+  }, [isValidMove, makeMove])
 
-  return { board, currentPlayer, makeMove, cpuMove };
-};
+  useEffect(() => {
+    if (currentPlayer === 'white' && !gameOver) {
+      const timer = setTimeout(cpuMove, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [currentPlayer, gameOver, cpuMove])
+
+  const countPieces = useCallback((): { black: number, white: number } => {
+    let black = 0
+    let white = 0
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        if (board[row][col] === 'black') black++
+        if (board[row][col] === 'white') white++
+      }
+    }
+    return { black, white }
+  }, [board])
+
+  const resetGame = useCallback(() => {
+    console.log('Resetting game...')
+    console.log('Current board before reset:', JSON.stringify(board))
+    const newBoard = createInitialBoard()
+    setBoard(newBoard)
+    setCurrentPlayer('black')
+    setGameOver(false)
+    console.log('New board after reset:', JSON.stringify(newBoard))
+  }, [])
+
+  useEffect(() => {
+    console.log('Current board state:', JSON.stringify(board))
+  }, [board])
+
+  return {
+    board,
+    currentPlayer,
+    gameOver,
+    makeMove,
+    resetGame,
+    countPieces,
+  }
+}
