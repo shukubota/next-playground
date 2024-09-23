@@ -16,55 +16,72 @@ export const useOthello = () => {
   const [moveHistory, setMoveHistory] = useState<{ player: 'black' | 'white'; position: [number, number] }[]>([]);
 
   // コマを置く処理
-  const handleCellClick = (y: number, x: number) => {  // yが行（上から何列目）、xが列（左から何列目）
+  const handleCellClick = (y: number, x: number) => {
     if (gameState[y][x] !== null || winner) return;
 
     const newGameState = [...gameState];
+
+    // コマを置く
     newGameState[y][x] = currentPlayer;
 
-    // 着手履歴を追加
-    const newMove = { player: currentPlayer as 'black' | 'white', position: [x + 1, y + 1] as [number, number] }; // [x, y]の順に修正
-    const updatedMoveHistory = [...moveHistory, newMove];
-    setMoveHistory(updatedMoveHistory);
+    // 挟んだコマを反転する処理を実行
+    const flippedPieces = flipPieces(y, x, newGameState);
 
-    // 全ての履歴をJSON.stringifyしてconsoleに出力
-    console.log(JSON.stringify(updatedMoveHistory));
+    // 反転が発生した場合のみ、ゲームの状態を更新
+    if (flippedPieces.length > 0) {
+      setGameState(newGameState);
 
-    setGameState(newGameState);
-    flipPieces(y, x, newGameState);
+      // 着手履歴を追加
+      const newMove = { player: currentPlayer, position: [x + 1, y + 1] as [number, number] };
+      const updatedMoveHistory = [...moveHistory, newMove];
+      setMoveHistory(updatedMoveHistory);
+      console.log(JSON.stringify(updatedMoveHistory));
 
-    updatePieceCounts(newGameState);
-    checkForPassOrEndGame(newGameState);
+      // コマ数を更新
+      updatePieceCounts(newGameState);
 
-    if (currentPlayer === 'black') {
-      setTimeout(() => cpuMove(newGameState), 500);
+      // プレイヤー交代
+      setCurrentPlayer(currentPlayer === 'black' ? 'white' : 'black');
     }
   };
 
-  // CPUが白を置く処理
-  const cpuMove = (currentGameState: any) => {
-    const newGameState = [...currentGameState];
-    // 仮に[0,0]にCPUが置く
-    newGameState[0][0] = 'white';
+  // コマを挟んで反転させる処理
+  const flipPieces = (y: number, x: number, newGameState: any) => {
+    const directions = [
+      [0, 1],  // 右
+      [0, -1], // 左
+      [1, 0],  // 下
+      [-1, 0], // 上
+      [1, 1],  // 右下
+      [1, -1], // 左下
+      [-1, 1], // 右上
+      [-1, -1] // 左上
+    ];
 
-    // CPUの着手履歴を追加
-    const newMove = { player: 'white' as 'black' | 'white', position: [1, 1] as [number, number] }; // [1,1]に白を置く
-    const updatedMoveHistory = [...moveHistory, newMove];
-    setMoveHistory(updatedMoveHistory);
+    const flippedPieces: [number, number][] = [];
 
-    // 全ての履歴をJSON.stringifyしてconsoleに出力
-    console.log(JSON.stringify(updatedMoveHistory));
+    directions.forEach(([dy, dx]) => {
+      const toFlip = [];
+      let ny = y + dy;
+      let nx = x + dx;
 
-    setGameState(newGameState);
-    flipPieces(0, 0, newGameState);
+      // ボードの範囲内で、相手のコマが続いている間は追加
+      while (ny >= 0 && ny < 4 && nx >= 0 && nx < 4 && newGameState[ny][nx] !== null && newGameState[ny][nx] !== currentPlayer) {
+        toFlip.push([ny, nx]);
+        ny += dy;
+        nx += dx;
+      }
 
-    updatePieceCounts(newGameState);
-    checkForPassOrEndGame(newGameState);
-    setCurrentPlayer('black');
-  };
+      // 自分のコマで挟める場所なら、反転を実行
+      if (ny >= 0 && ny < 4 && nx >= 0 && nx < 4 && newGameState[ny][nx] === currentPlayer) {
+        toFlip.forEach(([fy, fx]) => {
+          newGameState[fy][fx] = currentPlayer;
+          flippedPieces.push([fy, fx]);
+        });
+      }
+    });
 
-  const flipPieces = (x: number, y: number, newGameState: any) => {
-    // 挟んだコマを反転させるロジックを実装
+    return flippedPieces;
   };
 
   const updatePieceCounts = (newGameState: any) => {
@@ -72,18 +89,6 @@ export const useOthello = () => {
     const whiteCount = newGameState.flat().filter((cell: any) => cell === 'white').length;
     setBlackCount(blackCount);
     setWhiteCount(whiteCount);
-  };
-
-  const checkForPassOrEndGame = (newGameState: any) => {
-    // パスやゲーム終了をチェックするロジックを実装
-    const noMovesLeft = false;
-    if (noMovesLeft) {
-      if (blackCount > whiteCount) {
-        setWinner('black');
-      } else if (whiteCount > blackCount) {
-        setWinner('white');
-      }
-    }
   };
 
   const resetGame = () => {
