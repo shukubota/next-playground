@@ -1,173 +1,106 @@
-import { useState, useCallback, useEffect } from 'react';
-
-type Player = 'black' | 'white';
-type Cell = Player | null;
-type Position = [number, number];
-type GameState = Cell[][];
-type Move = { player: Player; position: Position };
-
-const initialState: GameState = [
-  [null, null, null, null],
-  [null, 'black', 'white', null],
-  [null, 'white', 'black', null],
-  [null, null, null, null],
-];
-
-const initialMoves: Move[] = [
-  { player: 'black', position: [2, 2] },
-  { player: 'white', position: [3, 2] },
-  { player: 'black', position: [3, 3] },
-  { player: 'white', position: [2, 3] },
-];
-
-const directions: Position[] = [
-  [-1, -1], [-1, 0], [-1, 1],
-  [0, -1],           [0, 1],
-  [1, -1],  [1, 0],  [1, 1]
-];
+import { useState } from 'react';
 
 export const useOthello = () => {
-  const [gameState, setGameState] = useState<GameState>(initialState);
-  const [currentPlayer, setCurrentPlayer] = useState<Player>('black');
-  const [moves, setMoves] = useState<Move[]>(initialMoves);
+  const initialGameState = [
+    [null, null, null, null],
+    [null, 'black', 'white', null],
+    [null, 'white', 'black', null],
+    [null, null, null, null],
+  ];
 
-  const isValidMove = useCallback((state: GameState, player: Player, [x, y]: Position): boolean => {
-    if (state[y-1][x-1] !== null) return false;
+  const [gameState, setGameState] = useState(initialGameState);
+  const [currentPlayer, setCurrentPlayer] = useState<'black' | 'white'>('black');
+  const [blackCount, setBlackCount] = useState(2);
+  const [whiteCount, setWhiteCount] = useState(2);
+  const [winner, setWinner] = useState<string | null>(null);
+  const [moveHistory, setMoveHistory] = useState<{ player: 'black' | 'white'; position: [number, number] }[]>([]);
 
-    for (const [dx, dy] of directions) {
-      let nx = x + dx, ny = y + dy;
-      let foundOpponent = false;
+  // コマを置く処理
+  const handleCellClick = (y: number, x: number) => {  // yが行（上から何列目）、xが列（左から何列目）
+    if (gameState[y][x] !== null || winner) return;
 
-      while (nx >= 1 && nx <= 4 && ny >= 1 && ny <= 4) {
-        if (state[ny-1][nx-1] === null) break;
-        if (state[ny-1][nx-1] === player) {
-          if (foundOpponent) return true;
-          break;
-        }
-        foundOpponent = true;
-        nx += dx;
-        ny += dy;
-      }
+    const newGameState = [...gameState];
+    newGameState[y][x] = currentPlayer;
+
+    // 着手履歴を追加
+    const newMove = { player: currentPlayer as 'black' | 'white', position: [x + 1, y + 1] as [number, number] }; // [x, y]の順に修正
+    const updatedMoveHistory = [...moveHistory, newMove];
+    setMoveHistory(updatedMoveHistory);
+
+    // 全ての履歴をJSON.stringifyしてconsoleに出力
+    console.log(JSON.stringify(updatedMoveHistory));
+
+    setGameState(newGameState);
+    flipPieces(y, x, newGameState);
+
+    updatePieceCounts(newGameState);
+    checkForPassOrEndGame(newGameState);
+
+    if (currentPlayer === 'black') {
+      setTimeout(() => cpuMove(newGameState), 500);
     }
+  };
 
-    return false;
-  }, []);
+  // CPUが白を置く処理
+  const cpuMove = (currentGameState: any) => {
+    const newGameState = [...currentGameState];
+    // 仮に[0,0]にCPUが置く
+    newGameState[0][0] = 'white';
 
-  const getValidMoves = useCallback((state: GameState, player: Player): Position[] => {
-    const validMoves: Position[] = [];
-    for (let y = 1; y <= 4; y++) {
-      for (let x = 1; x <= 4; x++) {
-        if (isValidMove(state, player, [x, y])) {
-          validMoves.push([x, y]);
-        }
-      }
-    }
-    return validMoves;
-  }, [isValidMove]);
+    // CPUの着手履歴を追加
+    const newMove = { player: 'white' as 'black' | 'white', position: [1, 1] as [number, number] }; // [1,1]に白を置く
+    const updatedMoveHistory = [...moveHistory, newMove];
+    setMoveHistory(updatedMoveHistory);
 
-  const makeMove = useCallback((state: GameState, player: Player, [x, y]: Position): GameState => {
-    if (!isValidMove(state, player, [x, y])) return state;
+    // 全ての履歴をJSON.stringifyしてconsoleに出力
+    console.log(JSON.stringify(updatedMoveHistory));
 
-    const newState = state.map(row => [...row]);
-    newState[y-1][x-1] = player;
+    setGameState(newGameState);
+    flipPieces(0, 0, newGameState);
 
-    for (const [dx, dy] of directions) {
-      let nx = x + dx, ny = y + dy;
-      const toFlip: Position[] = [];
-
-      while (nx >= 1 && nx <= 4 && ny >= 1 && ny <= 4) {
-        if (newState[ny-1][nx-1] === null) break;
-        if (newState[ny-1][nx-1] === player) {
-          toFlip.forEach(([fx, fy]) => {
-            newState[fy-1][fx-1] = player;
-          });
-          break;
-        }
-        toFlip.push([nx, ny]);
-        nx += dx;
-        ny += dy;
-      }
-    }
-
-    return newState;
-  }, [isValidMove]);
-
-  const computerMove = useCallback((currentState: GameState) => {
-    const validMoves = getValidMoves(currentState, 'white');
-    if (validMoves.length === 0) {
-      alert('CPUがパスします');
-      setCurrentPlayer('black');
-      return currentState;
-    }
-
-    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-    const newState = makeMove(currentState, 'white', randomMove);
-    setMoves(prev => [...prev, { player: 'white', position: randomMove }]);
+    updatePieceCounts(newGameState);
+    checkForPassOrEndGame(newGameState);
     setCurrentPlayer('black');
-    return newState;
-  }, [getValidMoves, makeMove]);
+  };
 
-  const handlePlayerMove = useCallback((x: number, y: number) => {
-    if (currentPlayer !== 'black') return;
+  const flipPieces = (x: number, y: number, newGameState: any) => {
+    // 挟んだコマを反転させるロジックを実装
+  };
 
-    setGameState(prevState => {
-      if (!isValidMove(prevState, 'black', [x, y])) return prevState;
+  const updatePieceCounts = (newGameState: any) => {
+    const blackCount = newGameState.flat().filter((cell: any) => cell === 'black').length;
+    const whiteCount = newGameState.flat().filter((cell: any) => cell === 'white').length;
+    setBlackCount(blackCount);
+    setWhiteCount(whiteCount);
+  };
 
-      const newState = makeMove(prevState, 'black', [x, y]);
-      setMoves(prev => [...prev, { player: 'black', position: [x, y] }]);
-      setCurrentPlayer('white');
-
-      setTimeout(() => {
-        setGameState(computerMove(newState));
-      }, 500);
-
-      return newState;
-    });
-  }, [currentPlayer, isValidMove, makeMove, computerMove]);
-
-  const resetGame = useCallback(() => {
-    setGameState(initialState);
-    setCurrentPlayer('black');
-    setMoves(initialMoves);
-  }, []);
-
-  const getCounts = useCallback((state: GameState) => {
-    let blackCount = 0, whiteCount = 0;
-    for (const row of state) {
-      for (const cell of row) {
-        if (cell === 'black') blackCount++;
-        else if (cell === 'white') whiteCount++;
-      }
-    }
-    return { blackCount, whiteCount };
-  }, []);
-
-  const checkGameEnd = useCallback(() => {
-    const blackMoves = getValidMoves(gameState, 'black');
-    const whiteMoves = getValidMoves(gameState, 'white');
-    if (blackMoves.length === 0 && whiteMoves.length === 0) {
-      const { blackCount, whiteCount } = getCounts(gameState);
+  const checkForPassOrEndGame = (newGameState: any) => {
+    // パスやゲーム終了をチェックするロジックを実装
+    const noMovesLeft = false;
+    if (noMovesLeft) {
       if (blackCount > whiteCount) {
-        alert('黒の勝ち');
+        setWinner('black');
       } else if (whiteCount > blackCount) {
-        alert('白の勝ち');
-      } else {
-        alert('引き分け');
+        setWinner('white');
       }
     }
-  }, [gameState, getValidMoves, getCounts]);
+  };
 
-  useEffect(() => {
-    console.log(JSON.stringify(moves));
-    console.log(JSON.stringify(gameState));
-    checkGameEnd();
-  }, [moves, gameState, checkGameEnd]);
+  const resetGame = () => {
+    setGameState(initialGameState);
+    setCurrentPlayer('black');
+    setBlackCount(2);
+    setWhiteCount(2);
+    setMoveHistory([]);
+    setWinner(null);
+  };
 
   return {
     gameState,
-    currentPlayer,
-    handlePlayerMove,
+    handleCellClick,
     resetGame,
-    getCounts,
+    blackCount,
+    whiteCount,
+    winner
   };
 };
