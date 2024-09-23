@@ -35,7 +35,7 @@ describe('useOthello', () => {
     // コマが正しく置かれたかを確認
     const expectedGameState = [
       [null, null, null, null],
-      [null, 'black', 'white', 'black'], // (2, 4) に黒が追加
+      [null, 'black', 'black', 'black'], // (2, 4) に黒が追加
       [null, 'white', 'black', null],
       [null, null, null, null],
     ];
@@ -43,8 +43,8 @@ describe('useOthello', () => {
     expect(result.current.gameState).toEqual(expectedGameState);
 
     // 黒のコマ数が増えているかを確認
-    expect(result.current.blackCount).toBe(3);
+    expect(result.current.blackCount).toBe(4);
     // 白のコマ数は変わらない
-    expect(result.current.whiteCount).toBe(2);
+    expect(result.current.whiteCount).toBe(1);
   });
 });
