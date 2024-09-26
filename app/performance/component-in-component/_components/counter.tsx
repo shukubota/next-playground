@@ -1,5 +1,5 @@
 'use client';
-import {useCallback, useEffect, useState, memo, ReactNode, useMemo} from 'react';
+import {useCallback, useEffect, useState, memo, ReactNode, useMemo, ComponentType} from 'react';
 
 export const Counter = () => {
   const [count, setCount] = useState<number>(0);
@@ -32,29 +32,38 @@ const useSample = () => {
   const [isDialogVisible, setIsDialogVisible] = useState(true);
 
   const [progress, setProgress] = useState(10);
-  const _Dialog = ({ progress, Layout }: { progress: number, Layout: ReactNode }) => {
-    console.log('Dialog rendered----------');
+  const _Dialog = ({ progress, Layout }: { progress: number, Layout: ComponentType }) => {
     return (
       <>
         <p className="p-3">progress: {progress}</p>
-        {Layout}
+        <Layout />
       </>
     );
   }
 
-  const Dialog = memo<{ progress: number, Layout: ReactNode }>(_Dialog);
+  const Dialog = memo<{ progress: number, Layout: ComponentType }>(_Dialog);
 
-  const createSampleDialogComponent = useCallback(({ Layout }: { Layout: ReactNode }) =>
-    // eslint-disable-next-line react/display-name
-    () =>
-      isDialogVisible ? (
+  // eslint-disable-next-line react/display-name
+  const createSampleDialogComponent = useCallback(({ Layout }: { Layout: ComponentType }) => () => {
+      return isDialogVisible ? (
         <Dialog
           progress={progress}
           Layout={Layout}
         />
-      )  : null,
+      ) : null;
+    },
     [isDialogVisible, progress],
   );
+
+  // eslint-disable-next-line react/display-name
+  const renderSampleDialogComponent = useCallback(({ Layout }: { Layout: ComponentType }) => {
+    return isDialogVisible ? (
+      <Dialog
+        progress={progress}
+        Layout={Layout}
+      />
+    ) : null;
+  }, [isDialogVisible, progress]);
 
   const toggleDialog = useCallback(() => {
     setIsDialogVisible(prev => !prev);
@@ -66,21 +75,24 @@ const useSample = () => {
 
   return {
     createSampleDialogComponent,
+    renderSampleDialogComponent,
     toggleDialog,
     addProgress,
   }
 }
 
 export const Example = () => {
-  const { createSampleDialogComponent, toggleDialog, addProgress } = useSample();
+  const { createSampleDialogComponent, renderSampleDialogComponent, toggleDialog, addProgress } = useSample();
 
   const SampleDialog = useMemo(() =>
-    createSampleDialogComponent({ Layout: <DialogLayout /> }), [createSampleDialogComponent]);
+    createSampleDialogComponent({ Layout: DialogLayout }), [createSampleDialogComponent]);
+
+  const MDialogLayout = useMemo(() => DialogLayout, []);
 
   return (
     <>
-      <SampleDialog />
-      {/*{createSampleDialogComponent({ Layout: <DialogLayout /> })}*/}
+      {/*<SampleDialog />*/}
+      {renderSampleDialogComponent({ Layout: MDialogLayout })}
       <div className="flex justify-evenly p-3">
         <button onClick={toggleDialog}>ダイアログ表示トグル</button>
         <button onClick={addProgress}>progressたすボタン</button>
@@ -89,20 +101,11 @@ export const Example = () => {
   )
 }
 
-// const DialogLayout = () => <p>aaa</p>
-
 const _DialogLayout = () => {
-  // const [count, setCount] = useState<number>(0);
-  // const addCount = useCallback(() => {
-  //   setCount(count => count + 1);
-  // }, [setCount]);
-
   console.log("--------DialogLayout rendered")
   return (
     <div className="p-3">
       <p>DialogLayout component</p>
-      {/*<p>count: {count}</p>*/}
-      {/*<button onClick={addCount}>countたすボタン</button>*/}
     </div>
   );
 }
