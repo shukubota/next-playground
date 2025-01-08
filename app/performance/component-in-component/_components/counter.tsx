@@ -16,10 +16,12 @@ export const Counter = () => {
 
   return (
     <div className="p-3">
+      <CountDisplay count={count} />
+      {/*{CountDisplay({ count })}*/}
       {/*これは書けない*/}
       {/*{(count % 2 === 0) ? CountDisplay({ count }) : <p>...</p>}*/}
       {/*こっちが正しい*/}
-      {(count % 2 === 0) ? <CountDisplay count={count} /> : <p>...</p>}
+      {/*{(count % 2 === 0) ? <CountDisplay count={count} /> : <p>...</p>}*/}
 
       <MCount2Display count={count2} />
       <AddButton onClick={add} />
@@ -87,12 +89,10 @@ export const Example = () => {
   const SampleDialog = useMemo(() =>
     createSampleDialogComponent({ Layout: DialogLayout }), [createSampleDialogComponent]);
 
-  const MDialogLayout = useMemo(() => DialogLayout, []);
-
   return (
     <>
       {/*<SampleDialog />*/}
-      {renderSampleDialogComponent({ Layout: MDialogLayout })}
+      {renderSampleDialogComponent({ Layout: DialogLayout })}
       <div className="flex justify-evenly p-3">
         <button onClick={toggleDialog}>ダイアログ表示トグル</button>
         <button onClick={addProgress}>progressたすボタン</button>
@@ -112,13 +112,12 @@ const _DialogLayout = () => {
 
 const DialogLayout = memo(_DialogLayout);
 
-// ----------
 // eslint-disable-next-line react/display-name
 const InnerImpl = memo(({ name }: { name: string }) => {
   useEffect(() => {
     console.log(`${name} re-rendered!`);
   }, [])
-  return null
+  return <p>{name}</p>;
 });
 
 export const Component = () => {
@@ -135,7 +134,6 @@ export const Component = () => {
   }, [state]);
 
   const renderInner = useCallback(() => {
-    // InnerImpl は state への依存がない
     return <InnerImpl name="asFunction" />;
   }, [state]);
 
@@ -146,7 +144,6 @@ export const Component = () => {
     </>
   );
 };
-
 
 const CountDisplay = ({ count }: { count: number }) => {
   console.log({ count });
@@ -174,7 +171,7 @@ const MCount2Display = memo(Count2Display);
 const AddButton = ({ onClick }: { onClick: () => void }) => {
   console.log('AddButton rendered');
   return (
-    <button className="bg-red-400" onClick={onClick}>count2たすボタン</button>
+    <button className="bg-red-400" onClick={onClick}>count1たすボタン</button>
   );
 }
 

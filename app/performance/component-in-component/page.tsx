@@ -3,8 +3,8 @@ import {Component, Counter, Example} from "./_components/counter";
 const Page = (): JSX.Element => {
   return (
     <div>
-      {/*<Counter />*/}
-      <Example />
+      <Counter />
+      {/*<Example />*/}
       {/*<Component />*/}
     </div>
   );
