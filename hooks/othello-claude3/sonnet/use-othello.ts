@@ -117,6 +117,9 @@ export const useOthello = () => {
   const makeMove = useCallback((position: Position) => {
     if (gameOver || currentPlayer !== 'black') return;
 
+    console.log(JSON.stringify({ currentPlayer, position }))
+    console.log(JSON.stringify(board))
+
     if (isValidMove(board, currentPlayer, position)) {
       const newBoard = flipPieces(board, currentPlayer, position);
       setBoard(newBoard);
