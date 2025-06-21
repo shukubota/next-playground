@@ -1,5 +1,8 @@
 'use client';
 
+import Image from 'next/image';
+import { tileImageMap } from '../../data/mahjongTileImages';
+
 interface MahjongTileProps {
   tile: string;
   selected?: boolean;
@@ -8,7 +11,7 @@ interface MahjongTileProps {
 }
 
 export function MahjongTile({ tile, selected = false, onClick, disabled = false }: MahjongTileProps) {
-  // 牌の種類に基づいて背景色を決定
+  // 牌の種類に基づいて背景色を決定（フォールバック用）
   const getTileColor = (tile: string) => {
     if (tile.includes('m')) return 'bg-blue-50'; // 萬子
     if (tile.includes('p')) return 'bg-red-50';  // 筒子
@@ -18,7 +21,7 @@ export function MahjongTile({ tile, selected = false, onClick, disabled = false 
     return 'bg-gray-50';
   };
 
-  // 牌の数字や種類を表示用にフォーマット
+  // 牌の数字や種類を表示用にフォーマット（フォールバック用）
   const formatTile = (tile: string) => {
     // 数牌の場合
     if (tile.match(/^[1-9][mps]$/)) {
@@ -35,18 +38,35 @@ export function MahjongTile({ tile, selected = false, onClick, disabled = false 
     return tile;
   };
 
+  // 牌の画像パスを取得（なければnull）
+  const imagePath = tileImageMap[tile] || null;
+
   return (
     <div 
       className={`
-        w-12 h-16 flex items-center justify-center 
+        w-16 h-20 flex items-center justify-center 
         border-2 rounded-md cursor-pointer transition-all
-        ${getTileColor(tile)}
-        ${selected ? 'border-blue-500 shadow-md' : 'border-gray-300'}
+        ${selected ? 'border-blue-500 shadow-md transform scale-105' : 'border-gray-300'}
         ${disabled ? 'opacity-80' : 'hover:border-blue-300 hover:shadow-sm'}
+        relative
       `}
       onClick={disabled ? undefined : onClick}
     >
-      <span className="text-xl font-bold">{formatTile(tile)}</span>
+      {imagePath ? (
+        <div className="relative w-full h-full overflow-hidden">
+          <Image 
+            src={imagePath}
+            alt={formatTile(tile)}
+            fill
+            style={{objectFit: 'contain'}}
+            priority
+          />
+        </div>
+      ) : (
+        <div className={`w-full h-full flex items-center justify-center ${getTileColor(tile)}`}>
+          <span className="text-xl font-bold">{formatTile(tile)}</span>
+        </div>
+      )}
     </div>
   );
 }
