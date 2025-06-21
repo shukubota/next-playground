@@ -166,5 +166,6 @@ export const useOthello = () => {
     makeMove,
     resetGame,
     countPieces,
+    cpuMove,
   }
 }

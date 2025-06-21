@@ -54,7 +54,7 @@ const useSample = () => {
         />
       ) : null;
     },
-    [isDialogVisible, progress],
+    [isDialogVisible, progress, Dialog],
   );
 
   // eslint-disable-next-line react/display-name
@@ -65,7 +65,7 @@ const useSample = () => {
         Layout={Layout}
       />
     ) : null;
-  }, [isDialogVisible, progress]);
+  }, [isDialogVisible, progress, Dialog]);
 
   const toggleDialog = useCallback(() => {
     setIsDialogVisible(prev => !prev);
@@ -116,7 +116,7 @@ const DialogLayout = memo(_DialogLayout);
 const InnerImpl = memo(({ name }: { name: string }) => {
   useEffect(() => {
     console.log(`${name} re-rendered!`);
-  }, [])
+  }, [name])
   return <p>{name}</p>;
 });
 
@@ -131,11 +131,11 @@ export const Component = () => {
 
   const InnerComponent = useCallback(() => {
     return <InnerImpl name="asComponent" />;
-  }, [state]);
+  }, []);
 
   const renderInner = useCallback(() => {
     return <InnerImpl name="asFunction" />;
-  }, [state]);
+  }, []);
 
   return (
     <>

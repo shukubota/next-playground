@@ -24,7 +24,7 @@ function DemoStreamDetail() {
 
   useEffect(() => {
     healthCheck();
-  }, []);
+  }, [healthCheck]);
 
   return (
     <div style={{ marginLeft: 10 }}>

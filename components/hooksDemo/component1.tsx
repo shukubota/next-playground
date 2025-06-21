@@ -10,7 +10,7 @@ export const Component1 = (props: Props1) => {
   // console.log('component1');
   const _changeTitle = useCallback(() => {
     props.changeTitle((new Date()).toISOString());
-  }, [props.changeTitle]);
+  }, [props]);
 
   const { useFetch } = useDemo();
   const { data, error, isLoading } = useFetch();
