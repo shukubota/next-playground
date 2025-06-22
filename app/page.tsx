@@ -15,6 +15,13 @@ export default function HomePage() {
           </div>
         </Link>
         
+        <Link href="/osho-shutsujin" className="block">
+          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <h2 className="text-xl font-semibold mb-2">王将出陣</h2>
+            <p className="text-gray-600">王将を目標位置に移動させる将棋パズルゲーム</p>
+          </div>
+        </Link>
+        
         <Link href="/othello-claude3" className="block">
           <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <h2 className="text-xl font-semibold mb-2">Othello Game (Claude3)</h2>
