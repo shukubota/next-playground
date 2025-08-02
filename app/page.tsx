@@ -35,6 +35,13 @@ export default function HomePage() {
             <p className="text-gray-600">Reactのパフォーマンス最適化のデモ</p>
           </div>
         </Link>
+        
+        <Link href="/gtm-test" className="block">
+          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <h2 className="text-xl font-semibold mb-2">GTM Test</h2>
+            <p className="text-gray-600">Google Tag Managerの動作テスト用ページ</p>
+          </div>
+        </Link>
       </div>
     </div>
   );
