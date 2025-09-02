@@ -72,7 +72,7 @@ export default function GTMTestPage() {
       event_type: eventType,
       event_name: eventName,
       event_value: JSON.stringify(eventValue),
-      member_id: 'user_demo_123456',
+      user_id: 'user_demo_123456',
       timestamp: new Date().toISOString()
     };
 
