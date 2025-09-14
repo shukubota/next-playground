@@ -302,14 +302,14 @@ export default function DevNewsPage() {
           setStatus(prev => ({
             ...prev,
             currentTask: tasks[currentTaskIndex],
-            progress: ((currentTaskIndex + 1) / tasks.length) * 90,
+            progress: ((currentTaskIndex + 1) / tasks.length) * 85,
             completedTasks: tasks.slice(0, currentTaskIndex).map(task => task.replace('中...', ''))
           }));
           currentTaskIndex++;
         } else {
           clearInterval(interval);
         }
-      }, 800);
+      }, 3000); // レート制限対応で3秒間隔に変更
 
       return () => clearInterval(interval);
     }
