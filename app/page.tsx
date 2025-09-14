@@ -42,6 +42,13 @@ export default function HomePage() {
             <p className="text-gray-600">Google Tag Managerの動作テスト用ページ</p>
           </div>
         </Link>
+
+        <Link href="/dev-news" className="block">
+          <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <h2 className="text-xl font-semibold mb-2">AI News Aggregator</h2>
+            <p className="text-gray-600">AI関連ニュースに特化したニュース収集アプリ</p>
+          </div>
+        </Link>
       </div>
     </div>
   );
