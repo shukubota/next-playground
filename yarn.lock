@@ -15,6 +15,11 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
+"@anthropic-ai/sdk@^0.62.0":
+  version "0.62.0"
+  resolved "https://registry.npmjs.org/@anthropic-ai/sdk/-/sdk-0.62.0.tgz"
+  integrity sha512-gT2VFKX0gSp7KJNlav/vzRFjJOPYDZxCJRx7MYUc+fqURc5aS6OI/UJeD2KytJkjsIWv0OOwH1ePc1S5QE2GZw==
+
 "@aws-amplify/analytics@6.0.15":
   version "6.0.15"
   resolved "https://registry.npmjs.org/@aws-amplify/analytics/-/analytics-6.0.15.tgz"

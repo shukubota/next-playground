@@ -20,32 +20,111 @@ interface CollectionStatus {
 }
 
 interface CollectionButtonProps {
-  onStartCollection: () => void;
+  onStartCollection: (customTopic?: string) => void;
   isCollecting: boolean;
 }
 
 function CollectionButton({ onStartCollection, isCollecting }: CollectionButtonProps) {
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customTopic, setCustomTopic] = useState('');
+
+  const handleDefaultCollection = () => {
+    onStartCollection();
+  };
+
+  const handleCustomCollection = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customTopic.trim()) {
+      onStartCollection(customTopic.trim());
+      setCustomTopic('');
+      setShowCustomInput(false);
+    }
+  };
+
   return (
     <div className="text-center mb-8">
-      <button
-        onClick={onStartCollection}
-        disabled={isCollecting}
-        className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200"
-      >
-        <svg
-          className={`w-6 h-6 mr-3 ${isCollecting ? 'animate-spin' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {/* Default collection button */}
+      <div className="mb-4">
+        <button
+          onClick={handleDefaultCollection}
+          disabled={isCollecting}
+          className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200"
         >
-          {isCollecting ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          ) : (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          )}
-        </svg>
-        {isCollecting ? 'AIニュースを収集中...' : '今日のAIニュースを収集'}
-      </button>
+          <svg
+            className={`w-6 h-6 mr-3 ${isCollecting ? 'animate-spin' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            {isCollecting ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            )}
+          </svg>
+          {isCollecting ? 'AIニュースを収集中...' : '今日のAIニュースを収集'}
+        </button>
+      </div>
+
+      {/* Custom topic toggle */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowCustomInput(!showCustomInput)}
+          disabled={isCollecting}
+          className="text-sm text-gray-600 hover:text-gray-800 disabled:text-gray-400 transition-colors duration-200"
+        >
+          {showCustomInput ? '標準収集に戻る' : 'カスタムトピックで収集'}
+        </button>
+      </div>
+
+      {/* Custom input form */}
+      {showCustomInput && (
+        <div className="max-w-2xl mx-auto">
+          <form onSubmit={handleCustomCollection} className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              カスタムニュース収集
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              収集したいニュースのテーマを自由に入力してください。ClaudeがBrave Searchに最適なクエリを生成します。
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="customTopic" className="block text-sm font-medium text-gray-700 mb-2">
+                  ニューストピック
+                </label>
+                <textarea
+                  id="customTopic"
+                  value={customTopic}
+                  onChange={(e) => setCustomTopic(e.target.value)}
+                  placeholder="例：量子コンピューティングの最新研究、日本のAIスタートアップ動向、生成AIの規制動向など"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={3}
+                  disabled={isCollecting}
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomInput(false)}
+                  disabled={isCollecting}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 disabled:text-gray-400 transition-colors duration-200"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCollecting || !customTopic.trim()}
+                  className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {isCollecting ? '収集中...' : 'カスタム収集開始'}
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
@@ -238,15 +317,24 @@ export default function DevNewsPage() {
     totalTasks: 0
   });
   const [error, setError] = useState<string | null>(null);
+  const [lastCustomTopic, setLastCustomTopic] = useState<string | null>(null);
+  const [queryOptimization, setQueryOptimization] = useState<{
+    reasoning: string;
+    originalTopic: string;
+  } | null>(null);
 
-  const startCollection = async () => {
+  const startCollection = async (customTopic?: string) => {
     setError(null);
+
+    const isCustom = !!customTopic;
+    const taskCount = isCustom ? 5 : 7; // カスタムの場合は少し少なめ
+
     setStatus({
       isCollecting: true,
       progress: 0,
-      currentTask: '収集を開始しています...',
+      currentTask: isCustom ? 'カスタムトピックを分析中...' : '収集を開始しています...',
       completedTasks: [],
-      totalTasks: 7
+      totalTasks: taskCount
     });
 
     try {
@@ -255,6 +343,9 @@ export default function DevNewsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          customTopic: customTopic
+        }),
       });
 
       if (!response.ok) {
@@ -263,20 +354,31 @@ export default function DevNewsPage() {
 
       const data = await response.json();
       setNews(data.news || []);
+      setLastCustomTopic(data.customTopic || null);
+      setQueryOptimization(data.queryOptimization || null);
+
+      const completedTasks = isCustom ? [
+        'カスタムトピックを分析',
+        '検索クエリを生成',
+        '関連ニュースを検索',
+        '結果を処理',
+        'サマリを生成'
+      ] : [
+        'AI news today を検索',
+        'machine learning updates を検索',
+        'ChatGPT OpenAI news を検索',
+        'Claude Anthropic news を検索',
+        'Gemini Google AI を検索',
+        'AI breakthrough today を検索',
+        '結果を統合してサマリを生成'
+      ];
+
       setStatus({
         isCollecting: false,
         progress: 100,
         currentTask: '完了',
-        completedTasks: [
-          'AI news today を検索',
-          'machine learning updates を検索',
-          'ChatGPT OpenAI news を検索',
-          'Claude Anthropic news を検索',
-          'Gemini Google AI を検索',
-          'AI breakthrough today を検索',
-          '結果を統合してサマリを生成'
-        ],
-        totalTasks: 7
+        completedTasks,
+        totalTasks: taskCount
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ニュース収集中にエラーが発生しました');
@@ -331,6 +433,23 @@ export default function DevNewsPage() {
         <CollectionButton onStartCollection={startCollection} isCollecting={status.isCollecting} />
 
         <ProgressIndicator status={status} />
+
+        {queryOptimization && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-8 border border-purple-200">
+            <h3 className="text-lg font-semibold text-purple-800 mb-3 flex items-center">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              クエリ最適化結果
+            </h3>
+            <div className="bg-white rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>元のトピック:</strong> {queryOptimization.originalTopic}
+              </p>
+              <p className="text-sm text-gray-700">{queryOptimization.reasoning}</p>
+            </div>
+          </div>
+        )}
 
         <NewsSummaryList news={news} error={error} />
       </div>

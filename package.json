@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.62.0",
     "@aws-amplify/cli": "^10.7.3",
     "@aws-amplify/datastore": "^4.0.15",
     "@aws-amplify/geo": "^2.0.15",

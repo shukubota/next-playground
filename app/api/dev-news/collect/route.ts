@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBraveClient, closeBraveClient } from '@/lib/mcp-client';
 import { processSearchResults, AI_NEWS_QUERIES, NewsItem } from '@/lib/news-processor';
+import { getQueryOptimizer } from '@/lib/claude-query-optimizer';
 
 interface CollectionResponse {
   news: NewsItem[];
   totalCollected: number;
   queriesExecuted: string[];
   timestamp: string;
+  customTopic?: string;
+  queryOptimization?: {
+    reasoning: string;
+    originalTopic: string;
+  };
 }
 
 // Fallback mock data in case MCP connection fails
@@ -44,6 +50,12 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Starting AI news collection...');
 
+    // Parse request body for custom topic
+    const body = await request.json().catch(() => ({}));
+    const customTopic = body.customTopic as string | undefined;
+
+    console.log('Custom topic:', customTopic ? customTopic : 'None (using default)');
+
     // Check if BRAVE_API_KEY is available
     if (!process.env.BRAVE_API_KEY) {
       console.warn('BRAVE_API_KEY not found, using fallback data');
@@ -52,8 +64,48 @@ export async function POST(request: NextRequest) {
         news: fallbackNews,
         totalCollected: fallbackNews.length,
         queriesExecuted: ['fallback-no-api-key'],
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        customTopic
       });
+    }
+
+    // Determine search queries
+    let queriesToExecute: string[];
+    let queryOptimization: { reasoning: string; originalTopic: string } | undefined;
+
+    if (customTopic) {
+      // Use Claude to optimize search queries for custom topic
+      try {
+        console.log('Optimizing queries with Claude for custom topic...');
+        const optimizer = getQueryOptimizer();
+        const optimizationResult = await optimizer.optimizeSearchQueries(customTopic);
+
+        queriesToExecute = optimizationResult.optimizedQueries;
+        queryOptimization = {
+          reasoning: optimizationResult.reasoning,
+          originalTopic: optimizationResult.originalTopic
+        };
+
+        console.log('Optimized queries:', queriesToExecute);
+        console.log('Reasoning:', optimizationResult.reasoning);
+      } catch (error) {
+        console.error('Claude optimization failed, using fallback queries:', error);
+        // Fallback to simple custom queries
+        queriesToExecute = [
+          `${customTopic} news latest`,
+          `${customTopic} recent updates`,
+          `${customTopic} 最新ニュース`,
+          `${customTopic} breakthrough 2024`,
+          `${customTopic} developments`
+        ];
+        queryOptimization = {
+          reasoning: `Claude APIが利用できないため、基本的なクエリパターンを使用します。`,
+          originalTopic: customTopic
+        };
+      }
+    } else {
+      // Use default AI news queries
+      queriesToExecute = [...AI_NEWS_QUERIES];
     }
 
     // Get MCP client and execute searches
@@ -61,9 +113,9 @@ export async function POST(request: NextRequest) {
       braveClient = await getBraveClient();
       console.log('Connected to Brave Search MCP');
 
-      // Execute parallel searches
-      const searchResults = await braveClient.searchMultiple([...AI_NEWS_QUERIES]);
-      console.log(`Executed ${AI_NEWS_QUERIES.length} search queries`);
+      // Execute searches
+      const searchResults = await braveClient.searchMultiple(queriesToExecute);
+      console.log(`Executed ${queriesToExecute.length} search queries`);
 
       // Process search results into news items
       const newsItems = processSearchResults(searchResults);
@@ -72,8 +124,10 @@ export async function POST(request: NextRequest) {
       const response: CollectionResponse = {
         news: newsItems,
         totalCollected: newsItems.length,
-        queriesExecuted: [...AI_NEWS_QUERIES],
-        timestamp: new Date().toISOString()
+        queriesExecuted: queriesToExecute,
+        timestamp: new Date().toISOString(),
+        customTopic,
+        queryOptimization
       };
 
       return NextResponse.json(response);
