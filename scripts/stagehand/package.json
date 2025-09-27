@@ -1,0 +1,35 @@
+
+
+{
+  "name": "stagehand-google-play-login",
+  "version": "1.0.0",
+  "description": "Automated login script for Google Play Console using Stagehand",
+  "type": "module",
+  "main": "google-play-login.js",
+  "scripts": {
+    "start": "node google-play-login.js",
+    "install-deps": "npm install @browserbasehq/stagehand dotenv otplib",
+    "totp-login": "node totp-auto-login.js",
+    "post-login": "node post-login-actions.js",
+    "update-store": "node update-store-listing.js",
+    "manual": "node manual-start.js",
+    "session": "node session-save.js",
+    "pw": "node playwright-session.js",
+    "stealth": "node stealth-browser.js",
+    "create-manual-session": "node manual-browser-session.js",
+    "use-manual-session": "node use-manual-session.js",
+    "chrome-session": "node chrome-session-direct.js",
+    "simple": "node simple-login.js"
+  },
+  "dependencies": {
+    "@browserbasehq/stagehand": "^2.0.0",
+    "dotenv": "^16.0.0",
+    "otplib": "^12.0.1"
+  },
+  "keywords": [
+    "stagehand",
+    "automation",
+    "google-play-console",
+    "login"
+  ]
+}

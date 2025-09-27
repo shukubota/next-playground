@@ -1,0 +1,15 @@
+# Browser session data
+browser-session/
+manual-browser-session/
+
+# Screenshots
+*.png
+
+# Environment files
+.envrc
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
