@@ -40,4 +40,5 @@ next-env.d.ts
 node_modules
 
 .envrc
-.envrc
+
+scripts/stagehand/screenshots
