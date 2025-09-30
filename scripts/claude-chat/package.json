@@ -1,0 +1,12 @@
+{
+  "name": "claude-chat",
+  "version": "1.0.0",
+  "description": "Simple Claude chat script using Vertex AI",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.0.0"
+  }
+}
