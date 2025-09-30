@@ -22,6 +22,19 @@ export function AIAgentInterface() {
 
   return (
     <div className="space-y-6">
+      {/* Status Banner */}
+      <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span className="text-sm font-medium text-gray-300">
+            AI Agent Ready
+          </span>
+          <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded">
+            Confluence search via function calling
+          </span>
+        </div>
+      </div>
+
       {/* Input Form */}
       <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -33,7 +46,7 @@ export function AIAgentInterface() {
               id="message"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask me anything..."
+              placeholder="Ask me anything... (Try: 'Search Confluence for documentation' or 'Find pages about project setup')"
               rows={4}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white placeholder-gray-400 resize-none"
               disabled={isLoading}
@@ -144,7 +157,7 @@ export function AIAgentInterface() {
                 {/* Metadata */}
                 {message.response.metadata && (
                   <div className="mt-3 text-xs text-gray-500 border-t border-gray-700 pt-2">
-                    Model: {message.response.metadata.model}
+                    <span>Model: {message.response.metadata.model}</span>
                   </div>
                 )}
               </div>

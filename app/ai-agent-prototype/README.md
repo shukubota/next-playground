@@ -1,6 +1,7 @@
 ## 概要
 ユーザーがブラウザ画面からテキストを入力し、AIエージェントがそのテキストに基づいて応答を生成するプロトタイプアプリケーションです。
 ただし、ClaudeやGemini等のインターフェイスは使わないで、応答に対して独自のvalidationを行い表示する。
+confluenceの情報をfunction callingで取得し、応答に反映する。
 
 ## セットアップ
 
@@ -39,34 +40,11 @@ npm run dev
 **Claude Sonnet 4** をGoogle Cloud Vertex AI経由で使用。
 
 設定値:
-- **プロジェクトID**: `tmp-rnd-ai`
+- **プロジェクトID**: 環境変数を参照
 - **リージョン**: `us-east5`
 - **モデル**: `claude-sonnet-4@20250514`
 - **フォールバックモデル**: `claude-3-5-haiku@20241022`
 
-.claude/setting.local.jsonの中身は
-```json
-{
-  "model": "claude-sonnet-4@20250514",
-  "env": {
-    "CLAUDE_CODE_USE_VERTEX": "true",
-    "CLOUD_ML_REGION": "us-east5",
-    "ANTHROPIC_VERTEX_PROJECT_ID": "projectID",
-    "ANTHROPIC_MODEL": "claude-sonnet-4@20250514",
-    "ANTHROPIC_SMALL_FAST_MODEL": "claude-3-5-haiku@20241022"
-  },
-  "permissions": {
-    "allow": [],
-    "deny": [
-      "Bash(rm -rf /)",
-      "Bash(rm -rf ~)",
-      "Bash(rm -rf ~/*)",
-      "Bash(rm -rf /*)",
-      "Bash(sudo rm:*)"
-    ]
-  }
-}
-```
 
 ### 技術スタック
 - **フレームワーク**: Next.js 14 (App Router)
@@ -91,10 +69,10 @@ npm run dev
 - ローディング状態管理
 
 #### API層 (`/app/api/ai-agent/`)
-- Google Cloud AI Platform client使用
 - Vertex AI経由でClaude呼び出し
 - レスポンスバリデーション
 - エラーフォールバック
+- confluenceへはfunction callingを利用してアクセスする
 
 ### 独自バリデーション機能
 - **文字数制限**: 10-5000文字
