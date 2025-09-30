@@ -25,3 +25,12 @@ export ANTHROPIC_SMALL_FAST_MODEL
 ## ライブラリ
 scripts/claude-chat/package.json
 に定義し、必要なライブラリをinstallする。
+
+## MCP
+### atlassian
+```bash
+export ATLASSIAN_API_TOKEN
+export ATLASSIAN_EMAIL
+export ATLASSIAN_DOMAIN
+```
+で定義した環境変数で認証する。
