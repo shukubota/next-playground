@@ -30,7 +30,7 @@ export function AIAgentInterface() {
             AI Agent Ready
           </span>
           <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded">
-            Confluence search via function calling
+            Confluence & Web search via function calling
           </span>
         </div>
       </div>
@@ -46,7 +46,7 @@ export function AIAgentInterface() {
               id="message"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask me anything... (Try: 'Search Confluence for documentation' or 'Find pages about project setup')"
+              placeholder="Ask me anything... (Try: 'Search Confluence for documentation' or 'What is the latest Google Play Console update?')"
               rows={4}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white placeholder-gray-400 resize-none"
               disabled={isLoading}
@@ -133,11 +133,88 @@ export function AIAgentInterface() {
                   )}
                 </div>
                 
-                <p className={`mb-3 ${
+                <div className={`mb-3 ${
                   message.response.isValid ? 'text-gray-200' : 'text-red-300'
                 }`}>
-                  {message.response.response}
-                </p>
+                  <div className="prose prose-invert prose-sm max-w-none">
+                    {message.response.response.split('\n').map((line, index) => {
+                      // Check if line is a header
+                      if (line.startsWith('##')) {
+                        return (
+                          <h3 key={index} className="text-lg font-bold text-green-400 mt-4 mb-2 border-b border-green-500/30 pb-1">
+                            {line.replace(/^##\s*/, '')}
+                          </h3>
+                        );
+                      }
+                      if (line.startsWith('#')) {
+                        return (
+                          <h2 key={index} className="text-xl font-bold text-blue-400 mt-6 mb-3">
+                            {line.replace(/^#\s*/, '')}
+                          </h2>
+                        );
+                      }
+                      // Check for status indicators
+                      if (line.includes('✅')) {
+                        return (
+                          <div key={index} className="flex items-start gap-2 my-2 p-2 bg-green-500/10 rounded border-l-2 border-green-500">
+                            <span className="text-green-400 text-sm">✅</span>
+                            <span className="text-green-300 text-sm">{line.replace('✅', '').trim()}</span>
+                          </div>
+                        );
+                      }
+                      if (line.includes('⚠️')) {
+                        return (
+                          <div key={index} className="flex items-start gap-2 my-2 p-2 bg-yellow-500/10 rounded border-l-2 border-yellow-500">
+                            <span className="text-yellow-400 text-sm">⚠️</span>
+                            <span className="text-yellow-300 text-sm">{line.replace('⚠️', '').trim()}</span>
+                          </div>
+                        );
+                      }
+                      if (line.includes('🔧')) {
+                        return (
+                          <div key={index} className="flex items-start gap-2 my-2 p-2 bg-blue-500/10 rounded border-l-2 border-blue-500">
+                            <span className="text-blue-400 text-sm">🔧</span>
+                            <span className="text-blue-300 text-sm">{line.replace('🔧', '').trim()}</span>
+                          </div>
+                        );
+                      }
+                      if (line.includes('🟡')) {
+                        return (
+                          <div key={index} className="flex items-start gap-2 my-2 p-3 bg-orange-500/10 rounded border border-orange-500/30">
+                            <span className="text-orange-400 text-sm">🟡</span>
+                            <span className="text-orange-300 text-sm font-medium">{line.replace('🟡', '').trim()}</span>
+                          </div>
+                        );
+                      }
+                      // Check for bold text
+                      if (line.includes('**') && line.trim()) {
+                        const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+                        return (
+                          <p key={index} className="my-1" dangerouslySetInnerHTML={{ __html: formattedLine }} />
+                        );
+                      }
+                      // Check for list items
+                      if (line.trim().startsWith('-') || line.trim().match(/^\d+\./)) {
+                        return (
+                          <div key={index} className="ml-4 my-1 flex items-start gap-2">
+                            <span className="text-gray-500 mt-1">•</span>
+                            <span className="text-gray-300">{line.replace(/^[\s\-\d\.]*/, '').trim()}</span>
+                          </div>
+                        );
+                      }
+                      // Regular paragraphs
+                      if (line.trim()) {
+                        return (
+                          <p key={index} className="my-2 leading-relaxed">
+                            {line}
+                          </p>
+                        );
+                      }
+                      // Empty lines
+                      return <div key={index} className="h-2"></div>;
+                    })}
+                  </div>
+                </div>
 
                 {/* Validation Errors */}
                 {message.response.validationErrors && message.response.validationErrors.length > 0 && (
