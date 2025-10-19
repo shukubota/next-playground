@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Play Console Auto-Fill",
+  "version": "1.0",
+  "description": "Automatically fill Google Play Console forms with app information",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus",
+    "alarms"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Play Console Auto-Fill"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.google.com/console/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
