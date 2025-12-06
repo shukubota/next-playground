@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slither.io Clone - CPU Battle</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none; /* テキスト選択防止 */
+        }
+        canvas {
+            display: block;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 20px;
+        }
+        #score-display {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border-radius: 15px;
+            z-index: 20;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        h1 { margin-top: 0; color: #ff5555; }
+        p { font-size: 18px; margin-bottom: 20px; }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            pointer-events: auto;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            transition: transform 0.1s, background 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+            background: #45a049;
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    長さ: <span id="score-display">20</span>
+</div>
+
+<div id="gameOver">
+    <h1>GAME OVER</h1>
+    <p>最終スコア: <span id="final-score">0</span></p>
+    <button onclick="location.reload()">もう一度プレイ</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+  /**
+   * ゲーム設定定数
+   */
+  const CONFIG = {
+    MAP_SIZE: 3000,         // マップの広さ
+    BASE_SPEED: 3.5,        // 基本速度
+    TURN_SPEED: 0.09,       // 旋回性能
+    INITIAL_LENGTH: 20,     // 初期サイズ
+    FOOD_COUNT: 400,        // エサの数
+    BOT_COUNT: 15,          // 敵ボットの数
+    SEGMENT_DIST: 5,        // 体の節の間隔
+    GRID_SIZE: 50           // 背景グリッドのサイズ
+  };
+
+  // DOM要素の取得
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score-display');
+  const finalScoreEl = document.getElementById('final-score');
+  const gameOverEl = document.getElementById('gameOver');
+
+  // グローバル変数
+  let width, height;
+  let gameRunning = true;
+  let mouseX = 0, mouseY = 0;
+  let cameraX = 0, cameraY = 0;
+
+  // マウス入力管理
+  window.addEventListener('mousemove', e => {
+    // 画面中央を原点(0,0)とした相対座標
+    mouseX = e.clientX - width / 2;
+    mouseY = e.clientY - height / 2;
+  });
+
+  // 画面リサイズ対応
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /**
+   * クラス定義：エサ
+   */
+  class Food {
+    constructor(x, y, size, color) {
+      this.x = x || Math.random() * CONFIG.MAP_SIZE;
+      this.y = y || Math.random() * CONFIG.MAP_SIZE;
+      this.size = size || (5 + Math.random() * 6);
+      // 鮮やかな色をランダム生成
+      this.color = color || `hsl(${Math.random() * 360}, 100%, 60%)`;
+
+      // 浮遊アニメーション用
+      this.offset = Math.random() * Math.PI * 2;
+    }
+
+    draw(ctx, time) {
+      // 少しフワフワさせる
+      const pulse = Math.sin(time * 0.005 + this.offset) * 1;
+
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+
+      // 発光表現
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = this.color;
+      ctx.fill();
+      ctx.shadowBlur = 0; // 重くなるのでリセット
+    }
+  }
+
+  /**
+   * クラス定義：ヘビ（プレイヤー・ボット共通）
+   */
+  class Snake {
+    constructor(x, y, isBot = false) {
+      this.x = x;
+      this.y = y;
+      this.angle = Math.random() * Math.PI * 2;
+      this.isBot = isBot;
+      this.history = [];
+      this.length = CONFIG.INITIAL_LENGTH;
+      this.baseWidth = 12; // 太さ
+      this.alive = true;
+
+      // 色設定（頭と体）
+      const hue = Math.random() * 360;
+      this.color = `hsl(${hue}, 80%, 50%)`;
+      this.headColor = `hsl(${hue}, 80%, 65%)`;
+
+      // ボット用AI変数
+      this.changeDirTimer = 0;
+      this.targetAngle = this.angle;
+
+      // 初期履歴を作成（出現時に点にならないように）
+      for(let i=0; i<this.length * CONFIG.SEGMENT_DIST; i++) {
+        this.history.push({x: this.x, y: this.y});
+      }
+    }
+
+    update() {
+      if (!this.alive) return;
+
+      // --- 移動方向の決定 ---
+      if (!this.isBot) {
+        // プレイヤー：マウス方向
+        this.targetAngle = Math.atan2(mouseY, mouseX);
+      } else {
+        // ボット：AI思考
+        this.botAI();
+      }
+
+      // --- 角度の滑らかな更新 ---
+      let diff = this.targetAngle - this.angle;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+
+      // 旋回半径は大きくなると大きくなる（曲がりにくくなる）
+      const turnSpeed = CONFIG.TURN_SPEED * (20 / (20 + this.length * 0.1));
+      this.angle += Math.sign(diff) * Math.min(Math.abs(diff), turnSpeed);
+
+      // --- 座標更新 ---
+      const speed = CONFIG.BASE_SPEED;
+      this.x += Math.cos(this.angle) * speed;
+      this.y += Math.sin(this.angle) * speed;
+
+      // --- 壁判定 ---
+      if (this.x < 0 || this.x > CONFIG.MAP_SIZE || this.y < 0 || this.y > CONFIG.MAP_SIZE) {
+        if (this.isBot) {
+          // ボットは壁際で反転を試みる
+          this.angle += Math.PI;
+          this.x = Math.max(0, Math.min(CONFIG.MAP_SIZE, this.x));
+          this.y = Math.max(0, Math.min(CONFIG.MAP_SIZE, this.y));
+        } else {
+          // プレイヤーは即死
+          this.die();
+        }
+      }
+
+      // --- 履歴（体）の更新 ---
+      this.history.push({x: this.x, y: this.y});
+
+      // 現在の長さに基づいて履歴を維持
+      const requiredHistory = this.length * CONFIG.SEGMENT_DIST;
+      while (this.history.length > requiredHistory) {
+        this.history.shift();
+      }
+    }
+
+    botAI() {
+      this.changeDirTimer--;
+
+      // 基本動作：ランダムウォーク
+      if (this.changeDirTimer <= 0) {
+        this.targetAngle += (Math.random() - 0.5) * 2;
+        this.changeDirTimer = 20 + Math.random() * 40;
+      }
+
+      // 回避行動：壁
+      const margin = 150;
+      if (this.x < margin) this.targetAngle = 0;
+      else if (this.x > CONFIG.MAP_SIZE - margin) this.targetAngle = Math.PI;
+      else if (this.y < margin) this.targetAngle = Math.PI / 2;
+      else if (this.y > CONFIG.MAP_SIZE - margin) this.targetAngle = -Math.PI / 2;
+    }
+
+    die() {
+      this.alive = false;
+
+      // 体をエサに変換
+      const foodValue = Math.floor(this.length / 2);
+      // 間引きながらエサを生成
+      for(let i=0; i<this.history.length; i+=3) {
+        const pos = this.history[i];
+        // 少し散らばらせる
+        const fx = pos.x + (Math.random() - 0.5) * 20;
+        const fy = pos.y + (Math.random() - 0.5) * 20;
+        const fSize = 8 + Math.random() * 5;
+        foods.push(new Food(fx, fy, fSize, this.color));
+      }
+
+      if (!this.isBot) {
+        endGame();
+      } else {
+        // ボットはリスポーン
+        setTimeout(() => {
+          bots = bots.filter(b => b !== this); // リストから削除
+          bots.push(new Snake(Math.random() * CONFIG.MAP_SIZE, Math.random() * CONFIG.MAP_SIZE, true));
+        }, 1000);
+      }
+    }
+
+    getHeadSize() {
+      // 長さに応じて頭も少し大きくなる
+      return this.baseWidth + (this.length * 0.05);
+    }
+
+    draw(ctx) {
+      if (!this.alive) return;
+
+      const currentWidth = this.getHeadSize();
+
+      // 体を描画
+      ctx.lineWidth = currentWidth * 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = this.color;
+
+      // パスを使って滑らかに描画
+      ctx.beginPath();
+      // 履歴の間引き描画（軽量化）
+      if(this.history.length > 0) {
+        ctx.moveTo(this.history[0].x, this.history[0].y);
+        for (let i = 1; i < this.history.length; i++) {
+          // カクつきを抑える簡易補間は今回は省略（重くなるため）
+          ctx.lineTo(this.history[i].x, this.history[i].y);
+        }
+      }
+      ctx.stroke();
+
+      // 境界線（少し暗い色）
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(0,0,0,0.3)";
+      ctx.stroke();
+
+      // 頭の装飾
+      ctx.fillStyle = this.headColor;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, currentWidth, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 目を描く (進行方向にあわせて回転)
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(currentWidth * 0.6, -currentWidth * 0.4, currentWidth * 0.4, 0, Math.PI*2); // 右目
+      ctx.arc(currentWidth * 0.6, currentWidth * 0.4, currentWidth * 0.4, 0, Math.PI*2);  // 左目
+      ctx.fill();
+
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.arc(currentWidth * 0.7, -currentWidth * 0.4, currentWidth * 0.15, 0, Math.PI*2); // 右黒目
+      ctx.arc(currentWidth * 0.7, currentWidth * 0.4, currentWidth * 0.15, 0, Math.PI*2); // 左黒目
+      ctx.fill();
+
+      ctx.restore();
+
+      // 名前表示
+      if (!this.isBot) {
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("YOU", this.x, this.y - currentWidth - 10);
+      }
+    }
+  }
+
+  /**
+   * ゲーム管理
+   */
+  let player;
+  let bots = [];
+  let foods = [];
+  let lastTime = 0;
+
+  function init() {
+    player = new Snake(CONFIG.MAP_SIZE/2, CONFIG.MAP_SIZE/2, false);
+
+    // ボット生成
+    for (let i = 0; i < CONFIG.BOT_COUNT; i++) {
+      bots.push(new Snake(Math.random() * CONFIG.MAP_SIZE, Math.random() * CONFIG.MAP_SIZE, true));
+    }
+    // エサ初期生成
+    for (let i = 0; i < CONFIG.FOOD_COUNT; i++) {
+      foods.push(new Food());
+    }
+  }
+
+  // 衝突判定ロジック
+  function checkCollisions() {
+    const allSnakes = [player, ...bots].filter(s => s.alive);
+
+    allSnakes.forEach(snake => {
+      const headSize = snake.getHeadSize();
+
+      // 1. エサとの衝突
+      for (let i = foods.length - 1; i >= 0; i--) {
+        const f = foods[i];
+        const dist = Math.hypot(snake.x - f.x, snake.y - f.y);
+
+        if (dist < headSize + f.size) {
+          // 食べた
+          snake.length += 0.5; // 成長率は調整
+          foods.splice(i, 1);
+          foods.push(new Food()); // 補充
+
+          if (!snake.isBot) {
+            // スコア更新：長さの整数部分
+            scoreEl.innerText = Math.floor(snake.length);
+          }
+        }
+      }
+
+      // 2. 他のヘビとの衝突 (Head vs Body)
+      allSnakes.forEach(other => {
+        if (snake === other) return; // 自分自身は無視
+
+        // 相手の履歴（体）をチェック
+        // 処理軽減のため、ステップを飛ばして判定
+        for (let i = 0; i < other.history.length; i += 3) {
+          const pos = other.history[i];
+          const dist = Math.hypot(snake.x - pos.x, snake.y - pos.y);
+          const otherBodySize = other.getHeadSize();
+
+          if (dist < otherBodySize * 0.8 + headSize * 0.5) {
+            snake.die();
+            break;
+          }
+        }
+      });
+    });
+  }
+
+  function endGame() {
+    gameRunning = false;
+    finalScoreEl.innerText = Math.floor(player.length);
+    gameOverEl.style.display = 'block';
+  }
+
+  function loop(timestamp) {
+    if (!gameRunning) return;
+
+    // カメラ位置の更新（プレイヤー中心）
+    cameraX = width / 2 - player.x;
+    cameraY = height / 2 - player.y;
+
+    // --- 描画開始 ---
+    // 背景塗りつぶし
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.translate(cameraX, cameraY);
+
+    // グリッド描画（視差効果）
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#333';
+    ctx.beginPath();
+    for (let x = 0; x <= CONFIG.MAP_SIZE; x += CONFIG.GRID_SIZE) {
+      ctx.moveTo(x, 0); ctx.lineTo(x, CONFIG.MAP_SIZE);
+    }
+    for (let y = 0; y <= CONFIG.MAP_SIZE; y += CONFIG.GRID_SIZE) {
+      ctx.moveTo(0, y); ctx.lineTo(CONFIG.MAP_SIZE, y);
+    }
+    ctx.stroke();
+
+    // マップ境界
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(0, 0, CONFIG.MAP_SIZE, CONFIG.MAP_SIZE);
+
+    // --- 更新処理 ---
+    player.update();
+    bots.forEach(b => b.update());
+    checkCollisions();
+
+    // --- オブジェクト描画 ---
+    // エサ
+    foods.forEach(f => f.draw(ctx, timestamp));
+
+    // ヘビ（重なり順：ボット → プレイヤー）
+    bots.forEach(b => b.draw(ctx));
+    player.draw(ctx);
+
+    ctx.restore();
+    requestAnimationFrame(loop);
+  }
+
+  // スタート
+  init();
+  requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
