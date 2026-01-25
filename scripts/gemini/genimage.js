@@ -20,14 +20,14 @@ async function main() {
   // 変換対象言語の定義
   const languages = [
     { name: "英語", code: "en", prompt: "このバナー広告画像を英語に変更して。変換後に日本語が含まれていないことを確認して。" },
-    { name: "中国語", code: "zh", prompt: "このバナー広告画像を中国語（簡体字）に変更して。変換後に日本語が含まれていないことを確認して。" },
-    { name: "ドイツ語", code: "de", prompt: "このバナー広告画像をドイツ語に変更して。変換後に日本語が含まれていないことを確認して。" },
-    { name: "フランス語", code: "fr", prompt: "このバナー広告画像をフランス語に変更して。変換後に日本語が含まれていないことを確認して。" },
-    { name: "アラビア語", code: "ar", prompt: "このバナー広告画像をアラビア語に変更して。変換後に日本語が含まれていないことを確認して。" }
+    // { name: "中国語", code: "zh", prompt: "このバナー広告画像を中国語（簡体字）に変更して。変換後に日本語が含まれていないことを確認して。" },
+    // { name: "ドイツ語", code: "de", prompt: "このバナー広告画像をドイツ語に変更して。変換後に日本語が含まれていないことを確認して。" },
+    // { name: "フランス語", code: "fr", prompt: "このバナー広告画像をフランス語に変更して。変換後に日本語が含まれていないことを確認して。" },
+    // { name: "アラビア語", code: "ar", prompt: "このバナー広告画像をアラビア語に変更して。変換後に日本語が含まれていないことを確認して。" }
   ];
 
-  // const modelName = "gemini-2.5-flash-image";
-  const modelName = "gemini-3-pro-image-preview";
+  const modelName = "gemini-2.5-flash-image";
+  // const modelName = "gemini-3-pro-image-preview";
 
   // 各言語に対して処理を実行
   for (const language of languages) {
